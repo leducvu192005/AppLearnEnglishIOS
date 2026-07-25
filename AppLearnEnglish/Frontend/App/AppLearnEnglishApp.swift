@@ -2,16 +2,21 @@
 //  AppLearnEnglishApp.swift
 //  AppLearnEnglish
 //
-//  Created by Lê Đức Vũ on 19/7/26.
-//
 
 import SwiftUI
+import FirebaseCore
 
 @main
 struct AppLearnEnglishApp: App {
+    // Initialize Firebase
+    init() {
+        FirebaseApp.configure()
+    }
+    
     var body: some Scene {
         WindowGroup {
-            OnboardingView()
+            RootView()
+                .environmentObject(AuthService.shared)
         }
     }
 }
