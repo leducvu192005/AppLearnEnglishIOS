@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.895806630016-m5cq4k9d357brq71mub4b1m4m8mdqk4q</string>
+	<key>API_KEY</key>
+	<string>AIzaSyACC4zDt9CD_R1EGCmBrLd4MiRDo0y0ptc</string>
+	<key>GCM_SENDER_ID</key>
+	<string>895806630016</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>CLIENT_ID</key>
+	<string>895806630016-m5cq4k9d357brq71mub4b1m4m8mdqk4q.apps.googleusercontent.com</string>
+	<key>BUNDLE_ID</key>
+	<string>com.leducvu.EnglishApp</string>
+	<key>PROJECT_ID</key>
+	<string>applearnenglishio</string>
+	<key>STORAGE_BUCKET</key>
+	<string>applearnenglishio.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false/>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false/>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true/>
+	<key>IS_GCM_ENABLED</key>
+	<true/>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true/>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:895806630016:ios:853e59f45e2ed4d12dde65</string>
+</dict>
+</plist>

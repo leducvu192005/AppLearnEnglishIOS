@@ -16,6 +16,7 @@ struct AppLearnEnglishApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                .environmentObject(SessionManager.shared)
                 .environmentObject(AuthService.shared)
         }
     }
