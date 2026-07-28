@@ -1,0 +1,23 @@
+========================================
+GEC PREPROCESSING PIPELINE STATISTICS REPORT
+========================================
+
+Total Raw Samples Found: 6004
+Duplicates Removed:      694
+Samples Filtered (Max len/Identical): 829
+
+Samples Count by Dataset:
+  - JFLEG: 4481 processed samples
+  - FCE: 0 processed samples
+
+Generated Splits Details:
+  - Train:      3584 lines/samples
+  - Validation: 448 lines/samples
+  - Test:       449 lines/samples
+
+Character Metrics (Source Sentences):
+  - Avg Length:  102.74 characters
+  - Max Length:  416 characters
+  - Min Length:  5 characters
+
+========================================
