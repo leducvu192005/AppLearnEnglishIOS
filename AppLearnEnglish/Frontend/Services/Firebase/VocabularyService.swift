@@ -17,6 +17,8 @@ class VocabularyService {
         do {
             let snapshot = try await db.collection("topics").getDocuments()
             if snapshot.documents.isEmpty {
+                print("Firebase Firestore is empty. Auto-seeding default vocabulary...")
+                await seedDefaultData()
                 return mockTopics
             }
             return snapshot.documents.compactMap { doc in
@@ -25,6 +27,31 @@ class VocabularyService {
         } catch {
             print("Firestore fetch topics failed: \(error.localizedDescription). Using Mock data.")
             return mockTopics
+        }
+    }
+    
+    // MARK: - Auto-Seeding Database
+    func seedDefaultData() async {
+        print("Starting Firestore Auto-Seeding...")
+        let batch = db.batch()
+        
+        // 1. Seed Topics
+        for topic in mockTopics {
+            let docRef = db.collection("topics").document(topic.id)
+            try? batch.setData(from: topic, forDocument: docRef)
+        }
+        
+        // 2. Seed Vocabulary
+        for word in mockVocabulary {
+            let docRef = db.collection("vocabulary").document(word.id)
+            try? batch.setData(from: word, forDocument: docRef)
+        }
+        
+        do {
+            try await batch.commit()
+            print("Firestore Auto-Seeding Completed Successfully! ✅")
+        } catch {
+            print("Firestore Auto-Seeding Failed: \(error.localizedDescription) ❌")
         }
     }
     

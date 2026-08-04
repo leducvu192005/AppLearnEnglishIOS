@@ -1,0 +1,27 @@
+[
+  {
+    "category": "Verb tense",
+    "input": "I go yesterday.",
+    "target": "I went yesterday."
+  },
+  {
+    "category": "Subject verb agreement",
+    "input": "She have a dog.",
+    "target": "She has a dog."
+  },
+  {
+    "category": "Article",
+    "input": "I eat a apple.",
+    "target": "I eat an apple."
+  },
+  {
+    "category": "Preposition",
+    "input": "He is good in English.",
+    "target": "He is good at English."
+  },
+  {
+    "category": "Plural",
+    "input": "Two book.",
+    "target": "Two books."
+  }
+]

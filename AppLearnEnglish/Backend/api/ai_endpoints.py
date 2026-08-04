@@ -40,13 +40,7 @@ class ExampleResponse(BaseModel):
     level: str
     sentence: str
 
-class CorrectionRequest(BaseModel):
-    text: str
-
-class CorrectionResponse(BaseModel):
-    original: str
-    corrected: str
-    explanation: str
+from schemas.grammar import CorrectionRequest, CorrectionResponse
 
 class ChatMessage(BaseModel):
     role: str  # "user" or "model" / "assistant"
@@ -144,43 +138,19 @@ async def generate_example(request: ExampleRequest):
     )
 
 
+from services.grammar_service import GrammarCorrectionService
+grammar_service = GrammarCorrectionService()
+
 @router.post("/correct", response_model=CorrectionResponse)
 async def correct_grammar(request: CorrectionRequest):
     text = request.text.strip()
-    
-    if gemini_available:
-        try:
-            prompt = (
-                f"Analyze and correct the English grammar in the following text: '{text}'. "
-                "Format the response EXACTLY as a JSON object with these keys: "
-                "'corrected' (the corrected text, or the original text if no errors exist), "
-                "'explanation' (a brief explanation of the errors in Vietnamese). "
-                "Return only the raw JSON. Do not include markdown code block syntax."
-            )
-            response = model.generate_content(prompt)
-            import json
-            raw_text = response.text.strip()
-            if raw_text.startswith("```"):
-                lines = raw_text.split("\n")
-                raw_text = "\n".join(lines[1:-1]) if lines[-1].startswith("```") else "\n".join(lines[1:])
-            data = json.loads(raw_text.strip())
-            return CorrectionResponse(
-                original=text,
-                corrected=data.get("corrected", text),
-                explanation=data.get("explanation", "Không có lỗi sai nào được phát hiện.")
-            )
-        except Exception as e:
-            print(f"Gemini correct failed: {e}. Falling back to mock data.")
-            
-    # Mock Data Fallback
-    if "go yesterday" in text.lower():
-        corrected = text.lower().replace("go yesterday", "went yesterday")
-        explanation = "Từ 'go' (thì hiện tại) cần chuyển thành 'went' (quá khứ đơn) vì có trạng ngữ chỉ thời gian quá khứ là 'yesterday'."
-    else:
-        corrected = text
-        explanation = "[Mẫu] Đã kiểm tra ngữ pháp. Hãy đặt biến môi trường GEMINI_API_KEY để AI phân tích lỗi thực tế."
-        
-    return CorrectionResponse(original=text, corrected=corrected, explanation=explanation)
+    if not text:
+        raise HTTPException(status_code=400, detail="Input text cannot be empty.")
+    try:
+        result = grammar_service.correct_text(text)
+        return CorrectionResponse(**result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Grammar model unavailable")
 
 
 @router.post("/chat", response_model=ChatResponse)

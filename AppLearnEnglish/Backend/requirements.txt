@@ -1,0 +1,10 @@
+fastapi>=0.100.0
+uvicorn>=0.22.0
+torch>=2.2.0
+transformers>=4.38.0
+peft>=0.8.0
+accelerate>=0.27.0
+sentencepiece>=0.2.0
+python-dotenv>=1.0.0
+pydantic-settings>=2.0.0
+google-generativeai>=0.3.0

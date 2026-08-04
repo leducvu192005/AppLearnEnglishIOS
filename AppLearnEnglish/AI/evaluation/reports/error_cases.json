@@ -1,0 +1,302 @@
+[
+    {
+        "input": "someone likes music and someone like science , and some one is talent on ballet while someone is not .",
+        "prediction": "someone likes music and someone like science , and some one is talent on ballet while someone is not",
+        "target": "Someone likes music and someone else likes science ; someone is talented at ballet while another person is not .",
+        "error_type": "wrong_correction"
+    },
+    {
+        "input": "So i asked my student , how did he think about my lesson , and tried to find out where the proublem it is .",
+        "prediction": "I asked my student , how did he think about my lesson , and tried to find out where the proublem it is .",
+        "target": "So i asked my student what he thought about my lesson , and I tried to find out what the problem was .",
+        "error_type": "wrong_correction"
+    },
+    {
+        "input": "Also the lecture mentioned that the stone placed between the Sphinx 's front paws was not placed there during the time of the old kingdom 's king , Khafre .",
+        "prediction": "Also the lecture mentioned that the stone placed between the Sphinx 's front paws was not placed there during the time of the old kingdom 's king , Khafre .",
+        "target": "Also , the lecture mentioned that the stone placed between the Sphinx 's front paws was not placed there during the time of the old kingdom 's king , Khafre .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "I will describe those two main issues : to meet the modern socity 's needs and to be eligiable candidates for some companies .",
+        "prediction": "I will describe those two main issues : to meet the modern socity 's needs and to be eligiable candidates for some companies .",
+        "target": "I will describe those two main issues : to meet the modern society 's needs and to be eligible candidates for some companies .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "Because it rains more , and the plants grow well , so the Puebo can make full use of it .",
+        "prediction": "Because it rains more and the plants grow well , so the Puebo can make full use of it .",
+        "target": "Because it rains more and the plants grow well , the Pueblo people can make full use of it .",
+        "error_type": "wrong_correction"
+    },
+    {
+        "input": "Another thing is that adverts always show and indicate prices on commdities alowing consumers to budget well in order to be able to buy them .",
+        "prediction": "Another thing is that adverts always show and indicate prices on commodities alowing consumers to budget well in order to be able to buy them .",
+        "target": "Another thing is that adverts always show and indicate prices on commodities allowing consumers to budget well in order to be able to buy them .",
+        "error_type": "wrong_correction"
+    },
+    {
+        "input": "but as we are young our body generates the new cell .",
+        "prediction": "but as we are young our body generates the new cell .",
+        "target": "When we are young , our body generates the new cell .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "The reason these problem occurs is also becayse of the exam .",
+        "prediction": "The reason these problem occurs is also becayse of the exam .",
+        "target": "The reason these problems occur is also because of the exam .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "Insufficient closet space inefficient heating and decaying plumbing makes life harder to live in old houses .",
+        "prediction": "Insufficient closet space inefficient heating and decaying plumbing makes life harder to live in old houses .",
+        "target": "Insufficient closet space , inefficient heating and decaying plumbing makes life harder to live in old houses .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "internet offer a good opportunity for people that travel for work , for a student , for work .",
+        "prediction": "internet offer a good opportunity for people that travel for work , for a student , for work .",
+        "target": "Internet offers a good opportunity for people that travel for work , for a student , and for work .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "There will be lot of members they had gone to the surface of the moon and they will be land safely to the earth .",
+        "prediction": "There will be lot of members they had gone to the surface of the moon and they will be land safely to the earth .",
+        "target": "There have been a lot of members that have gone to the surface of the moon and landed safely back on earth .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "This way anybody can reach success in his life and career .",
+        "prediction": "This way anybody can reach success in his life and career .",
+        "target": "This way everybody can achieve success in their lives and careers .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "But I can not use only my own subject to design a building .",
+        "prediction": "But I can not use only my own subject to design a building .",
+        "target": "But I cannot use only my own subject to design a building .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "This will reduce the pollutions caused y the carbones from the cars .",
+        "prediction": "This will reduce the pollutions caused y the carbones from the cars .",
+        "target": "This will reduce the pollution caused by the carbon from cars .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "New experiences to somebory is the same of the challenger and challenger is moviment , rason to some people been continue living .",
+        "prediction": "New experiences to somebory is the same of the challenger and challenger is movement , rason to some people been continue living .",
+        "target": "New experiences for someone is the same challenge and that challenge is movement , and the reason that some people continue living .",
+        "error_type": "wrong_correction"
+    },
+    {
+        "input": "Indeed , they threat lot of freshwater fish species because they need to eat and to find different kind of food in the oceans .",
+        "prediction": "Indeed , they threaten lot of freshwater fish species because they need to eat and to find different kind of food in the oceans .",
+        "target": "Indeed , they threaten lots of freshwater fish species because they need to eat and find different kinds of food in the oceans .",
+        "error_type": "wrong_correction"
+    },
+    {
+        "input": "When price of gas goes up , the consumer do not want buy gas for fuels .",
+        "prediction": "When price of gas goes up , the consumer do not want buy gas for fuels .",
+        "target": "When the price of gas goes up , consumers do not want to buy gas for fuel .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "It is better to have a very good understanding knowledege of many academic because it makes you broad and gives you chances and oppurtunity to work in different fields and enviroment .",
+        "prediction": "It is better to have a very good understanding knowlegege of many academic because it makes you broad and gives you chances and oppurtunity to work in different fields and environment .",
+        "target": "It is better to have a very good understanding and knowledge of many academic subjects because it gives you breadth and the chance and opportunity to work in different fields and environments .",
+        "error_type": "wrong_correction"
+    },
+    {
+        "input": "I feel that with the environmentally friendly benefits and with the attachment that society already has on cars will make people keep riding cars .",
+        "prediction": "I feel that with the environmentally friendly benefits and with the attachment that society already has on cars will make people keep riding cars .",
+        "target": "I feel that with the environmentally friendly benefits , and with the attachment that society already has on cars , the benefits will make people keep riding cars .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "Education is the basis of opportunities and the amount of subjects in which a person has knowledge conditions his or her opportunities in very important aspects of life like work and even helping others .",
+        "prediction": "Education is the basis of opportunities and the amount of subjects in which a person has knowledge conditions his or her opportunities in very important aspects of life like work and even helping others .",
+        "target": "Education is the basis of opportunities , and the amount of subjects in which a person has knowledge , provides more opportunities in all aspects of life like work and helping others .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "I belive to have broad knowledge to specialize in one specific subject have outweigh than to have broad knowledge of many academic subjects .",
+        "prediction": "I believe to have broad knowledge to specialize in one specific subject have outweigh than to have broad knowledge of many academic subjects .",
+        "target": "I believe specializing in one specific subject outweighs having broad knowledge of many academic subjects .",
+        "error_type": "wrong_correction"
+    },
+    {
+        "input": "Another sollution could be the developing of more fuel efficient cars , wich could also be good for America 's car manifacturers who will produce more attractive cars to sell to other countries .",
+        "prediction": "Another sollution could be the development of more fuel efficient cars , which could also be good for America 's car manifacturers who will produce more attractive cars to sell to other countries .",
+        "target": "Another solution could involve the development of more fuel efficient cars , which may also be good for America 's car manufacturers since they will produce cars that are more attractive to other countries .",
+        "error_type": "wrong_correction"
+    },
+    {
+        "input": "So I think we can not live if old people could not find siences and tecnologies and they did not developped .",
+        "prediction": "So I think we can not live if old people could not find siences and tecnologies and they did not developped .",
+        "target": "So I think we could not live if older people did not develop science and technologies .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "When someone have more than one academic subject it would be more amazing , interresting , positive , great , and helpfull .",
+        "prediction": "it would be more amazing , interresting , positive , great , and helpfull",
+        "target": "When someone has more than one academic subject , it would be more amazing , interesting , positive , great , and helpful .",
+        "error_type": "wrong_correction"
+    },
+    {
+        "input": "if they are urged to understand the concept that is being passed and interact with the information , the learning process will take place in a completely different way .",
+        "prediction": "the learning process will take place in a completely different way .",
+        "target": "If they are urged to understand the concept that is being passed along and interact with the information , the learning process will take place in a completely different way .",
+        "error_type": "wrong_correction"
+    },
+    {
+        "input": "For example in a chemistry class when you talk about oxygen is needed for a burning process you can give a fact to support your idea which is you can put out a fire with a blanket by cutting the oxygen .",
+        "prediction": "For example, in a chemistry class when you talk about oxygen is needed for a burning process you can give a fact to support your idea which is you can put out a fire with a blanket by cutting the oxygen .",
+        "target": "For example , in a chemistry class , when you talk about the fact that oxygen is needed for the burning process , you can support your idea with the fact that a blanket over fire puts out the fire by cutting oxygen .",
+        "error_type": "wrong_correction"
+    },
+    {
+        "input": "As far as I am concerned I agree with this statement , however some people are not agree with my opinion .",
+        "prediction": "As far as I am concerned I agree with this statement , however some people are not agree with my opinion .",
+        "target": "As far as I am concerned , I agree with this statement ; however , some people are not going to agree with my opinion .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "The government should think about the whole nature .",
+        "prediction": "The government should think about the whole nature .",
+        "target": "The government should think about nature as a whole .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "Every one would expect to leave his owns and secrets dreams like to be a painter , a writter ...",
+        "prediction": "Every one would expect to leave his owns and secrets dreams like to be a painter , a writter ...",
+        "target": "Everyone would be expected to leave behind his own and secret dreams , like becoming a painter or a writer ...",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "it gives him many apprtunites in the life , and i think that being knowledge person is a very wouderful thing to have so we can spend our lives in a successful way and full of happenis .",
+        "prediction": "it gives him many apprtunites in the life , and i think that being knowledge person is a very wouderful thing to have so we can spend our lives in a successful way .",
+        "target": "It gives him many opportunities in life and I think that being a knowledgeable person is a very wonderful thing to have so we can spend our lives in a successful way and full of happiness .",
+        "error_type": "wrong_correction"
+    },
+    {
+        "input": "The first is our life condition .",
+        "prediction": "The first is our life condition .",
+        "target": "The first is our life 's conditions .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "When you are able to understand ideas and concepts and with this are able to understand structures of thinking this can help you a lot .",
+        "prediction": "When you are able to understand ideas and concepts and with this are able to understand structures of thinking this can help you a lot .",
+        "target": "When you are able to understand ideas and concepts and are able to understand structures of thinking , then this can help you a lot .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "Can you ever visualize what a chaos our society would suffer if every individual considers himself/ herself an expert in every given field ?",
+        "prediction": "Can you ever visualize what a chaos our society would suffer if every individual considers himself/ herself an expert in every given field ?",
+        "target": "Can you ever visualize what chaos our society would suffer if every individual considers himself/ herself an expert in every given field ?",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "we know that prescribed burning shud be repreated every few years but its very expensive to spent every few year .",
+        "prediction": "we know that prescribed burning shud be repreated every few years but its very expensive to spent every few year .",
+        "target": "We know that prescribed burning should be repeated every few years , but it 's very expensive to spend every few years .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "they are the boney and vital part o the society .",
+        "prediction": "they are the boney and vital part of the society .",
+        "target": "They are the backbone and a vital part of the society .",
+        "error_type": "wrong_correction"
+    },
+    {
+        "input": "you have 30 typically an effective response will contain a minimum you will be satisfiy culture expienrence and and fit your test .",
+        "prediction": "you have 30 typically an effective response will contain a minimum you will be satisfiy culture expienrence and and fit your test .",
+        "target": "An effective response will typically contain 30 at a minimum , and you will be satisfied by the culture experience and fit your test .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "Operation room is not a bookmaker office or lottery house .",
+        "prediction": "Operation room is not a bookmaker office or lottery house .",
+        "target": "The operation room is not a bookmaker office or lottery house .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "Infact we will need a lot of place were parking all this cars , so we need a lot of project for this incrismt of cars .",
+        "prediction": "Infact we will need a lot of place were parking all this cars , so we need a lot of project for this incrismt of cars .",
+        "target": "In fact we will need a lot of places for parking all these cars , so we will need a big project for this accretion of cars .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "Futhermore , a tour guide will also provide safety and security for the travel , since they know already the do 's and don'ts in the tour .",
+        "prediction": "Furthermore , a tour guide will also provide safety and security for the travel , since they know already the do 's and don'ts in the tour .",
+        "target": "Futhermore , a tour guide will also provide safety and security for the travelers , since they already know the do 's and don'ts about the tour .",
+        "error_type": "wrong_correction"
+    },
+    {
+        "input": "Other tourists would teach you some tips for the travel with thier experience .",
+        "prediction": "Other tourists would teach you some tips for the travel with thier experience .",
+        "target": "Other tourists will teach you some tips for travel with their experience .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "In my opinion , cars will be took full use of in the twenty years .",
+        "prediction": "In my opinion , cars will be taken full use of in twenty years .",
+        "target": "In my opinion , cars will become self-driving in twenty years .",
+        "error_type": "wrong_correction"
+    },
+    {
+        "input": "secondly , it is an unfair action because it will effect the low-income American .",
+        "prediction": "secondly , it is an unfair action because it will effect the low-income american .",
+        "target": "Secondly , it is an unfair action because it will affect low-income Americans .",
+        "error_type": "wrong_correction"
+    },
+    {
+        "input": "People use the public water to drink water .",
+        "prediction": "People use the public water to drink water .",
+        "target": "People use public water to drink .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "Then , define your goals and work hard to achieve them .",
+        "prediction": "Then , define your goals and work hard to achieve them .",
+        "target": "Then define your goals and work hard to achieve them .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "They explain the specific points useing the examples about dinosaurs 's behabiar and physical face .",
+        "prediction": "They explain the specific points using the examples about dinosaurs 's behabiar and physical face .",
+        "target": "They explain the specific points using examples about the dinosaur 's behavior and physical features .",
+        "error_type": "wrong_correction"
+    },
+    {
+        "input": "If the sharp can not catch you mind , how can they sell the products to customer .",
+        "prediction": "If the sharp can not catch you mind , how can they sell the products to customer .",
+        "target": "If the hook can not catch your attention , how can they sell the products to customer ?",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "But it depends on what level we gain this knowledge .",
+        "prediction": "But it depends on what level we gain this knowledge .",
+        "target": "But it depends on what level of knowledge we gain .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "The definication yong or older is not apparent .",
+        "prediction": "The definication yong or older is not apparent .",
+        "target": "The definition of young or older is not apparent .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "As far as I am concerned I agree with this statement , however some people are not agree with my opinion .",
+        "prediction": "As far as I am concerned I agree with this statement , however some people are not agree with my opinion .",
+        "target": "As far as I am concerned , I agree with this statement , but some people may not agree with my opinion .",
+        "error_type": "missed_correction"
+    },
+    {
+        "input": "If we plant some speices which is very stonger to live , compareing other plants .",
+        "prediction": "If we plant some speices which is very stonger to live , comparing other plants .",
+        "target": "We should plant some species that are stronger and more likely to live than other plants .",
+        "error_type": "wrong_correction"
+    }
+]

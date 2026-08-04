@@ -1,0 +1,26 @@
+=================================
+Grammar Correction Evaluation
+=================================
+
+Model:
+FLAN-T5 Base + LoRA (Adapters: False)
+
+Dataset:
+test.jsonl
+
+Samples:
+50
+
+BLEU:
+0.4930
+
+GLEU:
+0.5446
+
+Exact Match:
+0.0000
+
+WER:
+0.3094
+
+=================================
