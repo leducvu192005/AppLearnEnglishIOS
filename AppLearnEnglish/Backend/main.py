@@ -7,10 +7,22 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+from contextlib import asynccontextmanager
+from services.model_loader import load_grammar_model
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Load model on server start to cache in RAM
+    print("[INFO] Pre-loading local GEC model on startup...")
+    load_grammar_model()
+    yield
+    print("[INFO] Shutting down server and releasing GEC model resources...")
+
 app = FastAPI(
     title="AppLearnEnglish AI Backend",
     description="FastAPI Backend for AI-powered English learning features",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # Configure CORS to allow access from the iOS Simulator

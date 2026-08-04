@@ -28,8 +28,8 @@ struct ChatMessageDTO: Codable {
 class AIService {
     static let shared = AIService()
     
-    // Configured default FastAPI server address (localhost:8000 for simulator)
-    private let baseURLString = "http://localhost:8000/api"
+    // Configured default FastAPI server address from AppConfig settings
+    private let baseURLString = "\(AppConfig.apiURL)/api"
     
     private init() {}
     
@@ -79,7 +79,7 @@ class AIService {
     }
     
     // MARK: - Correct Grammar
-    func correctGrammar(text: String) async throws -> CorrectionResponse {
+    func correctGrammar(text: String) async throws -> GrammarResult {
         guard let url = URL(string: "\(baseURLString)/correct") else {
             throw URLError(.badURL)
         }
@@ -97,7 +97,7 @@ class AIService {
             throw URLError(.badServerResponse)
         }
         
-        return try JSONDecoder().decode(CorrectionResponse.self, from: data)
+        return try JSONDecoder().decode(GrammarResult.self, from: data)
     }
     
     // MARK: - AI Chatbot Conversation

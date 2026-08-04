@@ -13,7 +13,7 @@ from typing import Dict, List, Any, Optional
 import torch
 from torch.utils.data import Dataset
 from transformers import AutoTokenizer
-from config import TrainingConfig
+from training.config import TrainingConfig
 
 logger = logging.getLogger("DatasetPipeline")
 

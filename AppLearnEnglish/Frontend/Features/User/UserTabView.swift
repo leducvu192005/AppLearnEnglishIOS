@@ -11,32 +11,41 @@ struct UserTabView: View {
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            // Tab 1: Home Dashboard inside NavigationStack
+            // Tab 1: Home Dashboard
             NavigationStack {
-                UserHomeDashboardView()
+                UserHomeDashboardView(selectedTab: $selectedTab)
             }
             .tabItem {
                 Label("Trang chủ", systemImage: "house.fill")
             }
             .tag(0)
             
-            // Tab 2: AI Chat inside NavigationStack
+            // Tab 2: Vocabulary Page (Học Từ Vựng bên cạnh Trang Chủ)
+            NavigationStack {
+                VocabularyView()
+            }
+            .tabItem {
+                Label("Từ vựng", systemImage: "character.book.closed.fill")
+            }
+            .tag(1)
+            
+            // Tab 3: AI Chat Tutor
             NavigationStack {
                 AIChatView()
             }
             .tabItem {
                 Label("AI Chat", systemImage: "bubble.left.and.bubble.right.fill")
             }
-            .tag(1)
+            .tag(2)
             
-            // Tab 3: Profile Settings inside NavigationStack
+            // Tab 4: Profile Settings
             NavigationStack {
                 ProfileViewModule()
             }
             .tabItem {
                 Label("Hồ sơ", systemImage: "person.crop.circle.fill")
             }
-            .tag(2)
+            .tag(3)
         }
         .tint(AppTheme.primaryMint)
     }
@@ -46,6 +55,7 @@ struct UserTabView: View {
 
 struct UserHomeDashboardView: View {
     @EnvironmentObject var sessionManager: SessionManager
+    @Binding var selectedTab: Int
     
     var body: some View {
         ScrollView {
@@ -116,14 +126,18 @@ struct UserHomeDashboardView: View {
                 
                 // Skill Learning Cards Grid
                 VStack(alignment: .leading, spacing: 14) {
-                    Text("Luyện tập 4 kỹ năng & Tiện ích")
+                    Text("Luyện tập & Tiện ích")
                         .font(.system(size: 18, weight: .black, design: .rounded))
                         .foregroundColor(AppTheme.textDark)
                         .padding(.horizontal)
                     
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 16)], spacing: 16) {
-                        // Vocabulary Button -> Navigates to VocabularyView
-                        NavigationLink(destination: VocabularyView()) {
+                        // Vocabulary Button -> Switches to Vocabulary Tab (Tab index 1)
+                        Button(action: {
+                            withAnimation {
+                                selectedTab = 1
+                            }
+                        }) {
                             SkillGridCard(title: "Từ vựng 📚", icon: "character.book.closed.fill", color: AppTheme.primaryMint)
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -136,9 +150,19 @@ struct UserHomeDashboardView: View {
                         }
                         .buttonStyle(PlainButtonStyle())
                         
-                        // AI Chat Button -> Navigates to AIChatView
-                        NavigationLink(destination: AIChatView()) {
+                        // AI Chat Button -> Switches to AI Chat Tab (Tab index 2)
+                        Button(action: {
+                            withAnimation {
+                                selectedTab = 2
+                            }
+                        }) {
                             SkillGridCard(title: "AI Chat Tutor 🦉", icon: "bubble.left.and.bubble.right.fill", color: AppTheme.pastelLavender)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        // Grammar Checker Button -> Navigates to GrammarCheckerView
+                        NavigationLink(destination: GrammarCheckerView()) {
+                            SkillGridCard(title: "Sửa ngữ pháp 🦉", icon: "pencil.and.outline", color: AppTheme.primaryCoral)
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
