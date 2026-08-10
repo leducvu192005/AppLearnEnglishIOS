@@ -91,6 +91,21 @@ class SessionManager: ObservableObject {
         }
     }
     
+    // MARK: - Reload User Profile on demand
+    @MainActor
+    func reloadUserProfile() async {
+        guard let uid = currentUserModel?.uid else { return }
+        do {
+            let userModel = try await self.userService.fetchUser(uid: uid)
+            self.currentUserModel = userModel
+            self.isLoggedIn = true
+            self.userRole = userModel.role
+            print("Successfully reloaded user profile details. XP: \(userModel.xp)")
+        } catch {
+            print("Failed to reload user profile: \(error.localizedDescription)")
+        }
+    }
+    
     // MARK: - Sign Out
     func signOut() {
         do {

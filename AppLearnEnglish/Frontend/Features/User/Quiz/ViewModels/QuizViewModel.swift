@@ -110,13 +110,11 @@ class QuizViewModel: ObservableObject {
         let xpGained = score * 5 // 5 XP per correct answer
         
         do {
-            try await db.collection("users").document(uid).updateData([
-                "xp": FieldValue.increment(Int64(xpGained))
-            ])
+            try await UserService.shared.updateProgressAndStreak(uid: uid, xp: xpGained)
             // Reload user progress stats in the session
-            SessionManager.shared.listenToAuthChanges()
+            await SessionManager.shared.reloadUserProfile()
         } catch {
-            print("Error updating quiz XP in Firestore: \(error.localizedDescription)")
+            print("Error updating quiz XP and streak in Firestore: \(error.localizedDescription)")
         }
     }
     

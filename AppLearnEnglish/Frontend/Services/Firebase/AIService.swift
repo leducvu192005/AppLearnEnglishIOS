@@ -100,8 +100,8 @@ class AIService {
         return try JSONDecoder().decode(GrammarResult.self, from: data)
     }
     
-    // MARK: - AI Chatbot Conversation
-    func sendChatMessage(chatHistory: [ChatMessageDTO]) async throws -> String {
+    // MARK: - AI Chatbot Conversation with vocabulary RAG context
+    func sendChatMessage(chatHistory: [ChatMessageDTO], vocabulary: [String]? = nil) async throws -> String {
         guard let url = URL(string: "\(baseURLString)/chat") else {
             throw URLError(.badURL)
         }
@@ -110,9 +110,16 @@ class AIService {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        // Encode chat messages history list
+        // Encode chat messages history list and optionally vocabulary
         let encoder = JSONEncoder()
-        let requestBody = ["messages": try JSONSerialization.jsonObject(with: encoder.encode(chatHistory))]
+        var requestBody: [String: Any] = [
+            "messages": try JSONSerialization.jsonObject(with: encoder.encode(chatHistory))
+        ]
+        
+        if let vocabulary = vocabulary {
+            requestBody["vocabulary"] = vocabulary
+        }
+        
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
         
         let (data, response) = try await URLSession.shared.data(for: request)

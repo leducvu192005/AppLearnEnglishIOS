@@ -13,8 +13,8 @@ gemini_available = False
 if GEMINI_API_KEY:
     try:
         genai.configure(api_key=GEMINI_API_KEY)
-        # Using Gemini 1.5 Flash as the default fast and cost-effective model
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        # Using gemini-3.5-flash as the default model
+        model = genai.GenerativeModel("gemini-3.5-flash")
         gemini_available = True
         print("Successfully configured Gemini API.")
     except Exception as e:
@@ -48,6 +48,7 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: List[ChatMessage]
+    vocabulary: Optional[List[str]] = None
 
 class ChatResponse(BaseModel):
     reply: str
@@ -172,8 +173,16 @@ async def chat(request: ChatRequest):
                 "politely correct it at the beginning of your message, then continue the conversation."
             )
             
+            if request.vocabulary:
+                vocab_list = ", ".join(request.vocabulary)
+                system_instruction += (
+                    f" The user is currently learning the following vocabulary words: {vocab_list}. "
+                    "In your response, try to naturally use one of these words if it fits the context, "
+                    "or ask a simple question that encourages the user to use one of these words in their answer."
+                )
+            
             chat_session = genai.GenerativeModel(
-                model_name="gemini-1.5-flash",
+                model_name="gemini-3.5-flash",
                 system_instruction=system_instruction
             ).start_chat(history=chat_history)
             

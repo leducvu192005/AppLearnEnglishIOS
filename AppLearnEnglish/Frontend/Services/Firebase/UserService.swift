@@ -65,12 +65,41 @@ class UserService {
         try docRef.setData(from: user, merge: true)
     }
     
-    // MARK: - Update Learning Progress
-    func updateProgress(uid: String, xp: Int, streak: Int) async throws {
+    // MARK: - Update Learning Progress & Streak dynamically using Firestore lastStudyDate
+    func updateProgressAndStreak(uid: String, xp: Int) async throws {
         let docRef = db.collection("users").document(uid)
+        
+        // Fetch current user details to calculate streak
+        let document = try await docRef.getDocument()
+        let data = document.data() ?? [:]
+        
+        let currentStreak = data["streak"] as? Int ?? 0
+        let lastStudyTimestamp = data["lastStudyDate"] as? Timestamp
+        
+        var newStreak = currentStreak
+        let calendar = Calendar.current
+        let today = Date()
+        
+        if let lastDate = lastStudyTimestamp?.dateValue() {
+            if calendar.isDateInToday(lastDate) {
+                // Studied today, streak stays same
+                newStreak = currentStreak
+            } else if calendar.isDateInYesterday(lastDate) {
+                // Studied yesterday, increment streak
+                newStreak = currentStreak + 1
+            } else {
+                // Missed day(s), reset streak to 1
+                newStreak = 1
+            }
+        } else {
+            // First study session, start at 1
+            newStreak = 1
+        }
+        
         try await docRef.updateData([
             "xp": FieldValue.increment(Int64(xp)),
-            "streak": streak
+            "streak": newStreak,
+            "lastStudyDate": Timestamp(date: today)
         ])
     }
 }

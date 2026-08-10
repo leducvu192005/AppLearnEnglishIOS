@@ -16,6 +16,21 @@ class AIChatViewModel: ObservableObject {
     
     private let aiService = AIService.shared
     
+    private func getActiveLearningVocabulary() -> [String] {
+        var words: [String] = []
+        // Read custom words from UserDefaults
+        if let data = UserDefaults.standard.data(forKey: "AppLearnEnglish_CustomWords"),
+           let decoded = try? JSONDecoder().decode([VocabularyWord].self, from: data) {
+            words += decoded.map { $0.word }
+        }
+        
+        // Also add some default mock vocabulary words
+        let defaults = ["airport", "passport", "luggage", "flight", "negotiate", "algorithm"]
+        words += defaults.shuffled().prefix(3)
+        
+        return Array(Array(Set(words)).shuffled().prefix(4))
+    }
+    
     // MARK: - Send message to FastAPI AI
     @MainActor
     func sendMessage() async {
@@ -29,8 +44,10 @@ class AIChatViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         
+        let vocabulary = getActiveLearningVocabulary()
+        
         do {
-            let reply = try await aiService.sendChatMessage(chatHistory: messages)
+            let reply = try await aiService.sendChatMessage(chatHistory: messages, vocabulary: vocabulary)
             
             // Append assistant reply
             let assistantMessage = ChatMessageDTO(role: "model", content: reply)
