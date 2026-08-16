@@ -30,6 +30,21 @@ class VocabularyService {
         }
     }
     
+    private func loadOxfordWords() -> [VocabularyWord] {
+        guard let url = Bundle.main.url(forResource: "oxford_3000", withExtension: "json") else {
+            print("Resource oxford_3000.json not found in main bundle. Using static mocks.")
+            return []
+        }
+        do {
+            let data = try Data(contentsOf: url)
+            let decoded = try JSONDecoder().decode([VocabularyWord].self, from: data)
+            return decoded
+        } catch {
+            print("Error parsing oxford_3000.json: \(error.localizedDescription). Using static mocks.")
+            return []
+        }
+    }
+    
     // MARK: - Auto-Seeding Database
     func seedDefaultData() async {
         print("Starting Firestore Auto-Seeding...")
@@ -41,8 +56,18 @@ class VocabularyService {
             try? batch.setData(from: topic, forDocument: docRef)
         }
         
-        // 2. Seed Vocabulary
-        for word in mockVocabulary {
+        // 2. Seed Vocabulary (Mock + Oxford 3000 bundle words)
+        let allWordsToSeed = mockVocabulary + loadOxfordWords()
+        var uniqueWords: [VocabularyWord] = []
+        var seenIds = Set<String>()
+        for w in allWordsToSeed {
+            if !seenIds.contains(w.id) {
+                seenIds.insert(w.id)
+                uniqueWords.append(w)
+            }
+        }
+        
+        for word in uniqueWords {
             let docRef = db.collection("vocabulary").document(word.id)
             try? batch.setData(from: word, forDocument: docRef)
         }
@@ -115,6 +140,22 @@ class VocabularyService {
             ])
         } else {
             try await favDocRef.delete()
+        }
+    }
+    
+    // MARK: - Fetch All Vocabulary Words (Firestore with Mock Fallback)
+    func fetchAllVocabulary() async throws -> [VocabularyWord] {
+        do {
+            let snapshot = try await db.collection("vocabulary").getDocuments()
+            if snapshot.documents.isEmpty {
+                return mockVocabulary
+            }
+            return snapshot.documents.compactMap { doc in
+                try? doc.data(as: VocabularyWord.self)
+            }
+        } catch {
+            print("Error fetching all vocabulary words: \(error.localizedDescription). Using Mock data.")
+            return mockVocabulary
         }
     }
     

@@ -11,111 +11,113 @@ struct ResultView: View {
     
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: DesignSystem.Spacing.large) {
+                // Mascot Celebration
+                OwlMascot(state: .celebratingTrophy, size: 110)
+                    .padding(.top, 24)
+                
                 // Header congratulation
                 VStack(spacing: 8) {
                     Text("🎓 Kết Quả Quiz")
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .foregroundColor(AppTheme.primaryMint)
+                        .fontCaption()
+                        .foregroundColor(DesignSystem.Colors.primary)
                         .padding(.horizontal, 12)
-                        .padding(.vertical, 4)
-                        .background(AppTheme.primaryMint.opacity(0.15))
+                        .padding(.vertical, 6)
+                        .background(DesignSystem.Colors.primaryLight)
                         .cornerRadius(8)
                     
                     Text("Chúc mừng bạn!")
-                        .font(.system(size: 26, weight: .black, design: .rounded))
-                        .foregroundColor(AppTheme.textDark)
+                        .fontTitle()
+                        .foregroundColor(DesignSystem.Colors.darkNavy)
                 }
-                .padding(.top, 20)
                 
                 // Score circular progress widget
                 ZStack {
                     Circle()
-                        .stroke(Color.black.opacity(0.04), lineWidth: 16)
-                        .frame(width: 140, height: 140)
+                        .stroke(DesignSystem.Colors.primaryLight, lineWidth: 14)
+                        .frame(width: 130, height: 130)
                     
                     Circle()
                         .stroke(
-                            AppTheme.primaryMint,
-                            style: StrokeStyle(lineWidth: 16, lineCap: .round)
+                            DesignSystem.Colors.primary,
+                            style: StrokeStyle(lineWidth: 14, lineCap: .round)
                         )
-                        .frame(width: 140, height: 140)
+                        .frame(width: 130, height: 130)
                         .rotationEffect(.degrees(-90))
                     
                     VStack(spacing: 2) {
                         Text("\(viewModel.score)")
-                            .font(.system(size: 40, weight: .black, design: .rounded))
-                            .foregroundColor(AppTheme.textDark)
+                            .font(.system(size: 38, weight: .bold, design: .rounded))
+                            .foregroundColor(DesignSystem.Colors.darkNavy)
                         Text("/ \(viewModel.quizzes.count) đúng")
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
-                            .foregroundColor(AppTheme.textMuted)
+                            .fontCaption()
+                            .foregroundColor(DesignSystem.Colors.secondaryText)
                     }
                 }
-                .padding(.vertical, 10)
+                .padding(.vertical, 8)
                 
                 // Stats Card Grid
                 HStack(spacing: 16) {
                     // XP Gained Card
-                    VStack(spacing: 6) {
-                        Text("⚡️")
-                            .font(.system(size: 22))
-                        Text("+\(viewModel.score * 5) XP")
-                            .font(.system(size: 16, weight: .black, design: .rounded))
-                            .foregroundColor(AppTheme.primaryMint)
-                        Text("Kinh nghiệm")
-                            .font(.system(size: 11, weight: .semibold, design: .rounded))
-                            .foregroundColor(AppTheme.textMuted)
+                    SoftCard(padding: 16) {
+                        VStack(spacing: 6) {
+                            Text("⚡️")
+                                .font(.system(size: 20))
+                            Text("+\(viewModel.score * 5) XP")
+                                .fontSubheading()
+                                .foregroundColor(DesignSystem.Colors.success)
+                            Text("Kinh nghiệm")
+                                .fontCaption()
+                                .foregroundColor(DesignSystem.Colors.secondaryText)
+                        }
+                        .frame(maxWidth: .infinity)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .cuteCardStyle()
                     
                     // Mistakes Card
-                    VStack(spacing: 6) {
-                        Text("❌")
-                            .font(.system(size: 22))
-                        Text("\(viewModel.wrongQuizzes.count) lỗi")
-                            .font(.system(size: 16, weight: .black, design: .rounded))
-                            .foregroundColor(AppTheme.primaryCoral)
-                        Text("Câu sai")
-                            .font(.system(size: 11, weight: .semibold, design: .rounded))
-                            .foregroundColor(AppTheme.textMuted)
+                    SoftCard(padding: 16) {
+                        VStack(spacing: 6) {
+                            Text("❌")
+                                .font(.system(size: 20))
+                            Text("\(viewModel.wrongQuizzes.count) lỗi")
+                                .fontSubheading()
+                                .foregroundColor(DesignSystem.Colors.accentPink)
+                            Text("Câu sai")
+                                .fontCaption()
+                                .foregroundColor(DesignSystem.Colors.secondaryText)
+                        }
+                        .frame(maxWidth: .infinity)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .cuteCardStyle()
                 }
                 .padding(.horizontal)
                 
                 // MARK: - Review mistakes section if any
                 if !viewModel.wrongQuizzes.isEmpty {
                     VStack(alignment: .leading, spacing: 14) {
-                        Text("Ôn lại câu trả lời sai")
-                            .font(.system(size: 18, weight: .black, design: .rounded))
-                            .foregroundColor(AppTheme.textDark)
-                            .padding(.horizontal)
+                        SectionHeader(
+                            title: "Ôn lại câu trả lời sai",
+                            subtitle: "Học từ những lỗi sai để cải thiện kỹ năng"
+                        )
+                        .padding(.horizontal)
                         
                         VStack(spacing: 12) {
                             ForEach(viewModel.wrongQuizzes) { quiz in
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text(quiz.question)
-                                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                                        .foregroundColor(AppTheme.textDark)
-                                    
-                                    HStack {
-                                        Text("Đáp án đúng:")
-                                            .font(.system(size: 13, design: .rounded))
-                                            .foregroundColor(AppTheme.textMuted)
-                                        Text(quiz.correctAnswer)
-                                            .font(.system(size: 13, weight: .bold, design: .rounded))
-                                            .foregroundColor(AppTheme.primaryMint)
+                                SoftCard(padding: 16) {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text(quiz.question)
+                                            .fontSubheading()
+                                            .foregroundColor(DesignSystem.Colors.darkNavy)
+                                        
+                                        HStack(spacing: 4) {
+                                            Text("Đáp án đúng:")
+                                                .fontBodySecondary()
+                                                .foregroundColor(DesignSystem.Colors.secondaryText)
+                                            Text(quiz.correctAnswer)
+                                                .fontBody()
+                                                .foregroundColor(DesignSystem.Colors.success)
+                                        }
                                     }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                 }
-                                .padding(14)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Color.white)
-                                .cornerRadius(16)
-                                .shadow(color: Color.black.opacity(0.02), radius: 6, x: 0, y: 3)
                             }
                         }
                         .padding(.horizontal)
@@ -123,19 +125,14 @@ struct ResultView: View {
                 }
                 
                 // Finish button
-                PrimaryCuteButton(
-                    title: "Hoàn thành 🚀",
-                    iconName: "checkmark.circle.fill",
-                    backgroundColor: AppTheme.primaryMint,
-                    shadowColor: Color(hex: "27AE60")
-                ) {
+                PrimaryButton(title: "Hoàn thành 🚀", iconName: "checkmark.circle.fill") {
                     onFinish()
                 }
                 .padding(.horizontal)
-                .padding(.vertical, 10)
+                .padding(.vertical, 8)
             }
         }
-        .background(AppTheme.bgGradientStart)
+        .background(DesignSystem.Colors.background)
     }
 }
 

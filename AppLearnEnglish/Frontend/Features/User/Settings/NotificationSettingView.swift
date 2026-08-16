@@ -24,7 +24,7 @@ struct NotificationSettingView: View {
                         Spacer()
                     }
                 }
-                .onChange(of: enableReminder) { _, isEnabled in
+                .onChange(of: enableReminder) { isEnabled in
                     if isEnabled {
                         requestNotificationAccess()
                     } else {
@@ -39,7 +39,7 @@ struct NotificationSettingView: View {
                         displayedComponents: .hourAndMinute
                     )
                     .datePickerStyle(CompactDatePickerStyle())
-                    .onChange(of: reminderTime) { _, newTime in
+                    .onChange(of: reminderTime) { newTime in
                         scheduleDailyAlert(newTime)
                     }
                 }
@@ -48,7 +48,7 @@ struct NotificationSettingView: View {
             Section(header: Text("Tính năng bổ sung")) {
                 Toggle("💡 Từ vựng mỗi sáng (8:00)", isOn: $enableWordOfDay)
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .onChange(of: enableWordOfDay) { _, isEnabled in
+                    .onChange(of: enableWordOfDay) { isEnabled in
                         if isEnabled {
                             notificationManager.scheduleWordOfDayReminder()
                         } else {

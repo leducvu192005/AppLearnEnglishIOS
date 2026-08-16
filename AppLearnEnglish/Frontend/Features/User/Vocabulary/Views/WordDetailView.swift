@@ -10,12 +10,14 @@ struct WordDetailView: View {
     @State var isLearned: Bool
     @State var isFavorite: Bool
     @ObservedObject var viewModel: VocabularyViewModel
+    @Environment(\.dismiss) var dismiss
     
     @StateObject private var detailViewModel: WordDetailViewModel
     @StateObject private var speechRecognizer = SpeechRecognizer()
     
     @State private var showingResult = false
     @State private var score = 0
+    @State private var showingSaveSheet = false
     
     // Inject the word model into detailViewModel on initialization
     init(word: VocabularyWord, isLearned: Bool, isFavorite: Bool, viewModel: VocabularyViewModel) {
@@ -29,190 +31,193 @@ struct WordDetailView: View {
     var body: some View {
         ZStack {
             // Soft Background
-            LinearGradient(
-                colors: [AppTheme.bgGradientStart, AppTheme.bgGradientEnd],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            DesignSystem.Colors.background
+                .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Main Content Scroll Container (prevents overflow on smaller devices)
                 ScrollView {
-                    VStack(spacing: 20) {
+                    VStack(spacing: DesignSystem.Spacing.large) {
                         
-                        // MARK: - 1. Word & Audio Header Card
-                        VStack(spacing: 16) {
-                            Text(word.word)
-                                .font(.system(size: 38, weight: .black, design: .rounded))
-                                .foregroundColor(AppTheme.textDark)
-                            
-                            Text(word.phonetic)
-                                .font(.system(size: 20, weight: .medium, design: .rounded))
-                                .foregroundColor(AppTheme.textMuted)
-                            
-                            // Audio Player Button
-                            AudioButton(isPlaying: detailViewModel.isPlaying) {
-                                detailViewModel.playAudio()
-                            }
-                            .padding(.vertical, 8)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 24)
-                        .cuteCardStyle()
-                        .padding(.horizontal, 20)
-                        
-                        // MARK: - 2. Meaning & Example Cards
-                        VStack(spacing: 16) {
-                            // Meaning card
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack(spacing: 6) {
-                                    Text("🏷")
-                                    Text("Ý nghĩa")
-                                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                                        .foregroundColor(AppTheme.textMuted)
+                        // MARK: - 1. MAIN FLASHCARD
+                        SoftCard(padding: 28) {
+                            VStack(spacing: 20) {
+                                // Mascot companion
+                                OwlMascot(state: isLearned ? .celebrating : .thinking, size: 100)
+                                    .padding(.bottom, 4)
+                                
+                                // Word Name
+                                Text(word.word)
+                                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                                    .foregroundColor(DesignSystem.Colors.darkNavy)
+                                    .multilineTextAlignment(.center)
+                                
+                                // Phonetic IPA
+                                Text(word.phonetic)
+                                    .font(.system(size: 18, weight: .medium, design: .rounded))
+                                    .foregroundColor(DesignSystem.Colors.secondaryText)
+                                
+                                // Part of Speech Badge (simulated/extracted or defaults to Level)
+                                Text(word.level)
+                                    .fontCaption()
+                                    .foregroundColor(DesignSystem.Colors.accentPink)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(DesignSystem.Colors.accentPink.opacity(0.12))
+                                    .cornerRadius(8)
+                                
+                                Divider()
+                                    .padding(.vertical, 8)
+                                
+                                // Translation
+                                VStack(spacing: 6) {
+                                    Text("Nghĩa tiếng Việt")
+                                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                                        .foregroundColor(DesignSystem.Colors.secondaryText)
+                                        .textCase(.uppercase)
+                                    Text(word.meaning)
+                                        .font(.system(size: 22, weight: .semibold, design: .rounded))
+                                        .foregroundColor(DesignSystem.Colors.darkNavy)
+                                        .multilineTextAlignment(.center)
                                 }
                                 
-                                Text(word.meaning)
-                                    .font(.system(size: 20, weight: .bold, design: .rounded))
-                                    .foregroundColor(AppTheme.textDark)
-                            }
-                            .padding(16)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .cuteCardStyle()
-                            
-                            // Example card
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack(spacing: 6) {
-                                    Text("📝")
+                                // Example Sentence
+                                VStack(spacing: 6) {
                                     Text("Ví dụ minh họa")
-                                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                                        .foregroundColor(AppTheme.textMuted)
+                                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                                        .foregroundColor(DesignSystem.Colors.secondaryText)
+                                        .textCase(.uppercase)
+                                    Text("\"\(word.example)\"")
+                                        .fontBody()
+                                        .italic()
+                                        .foregroundColor(DesignSystem.Colors.darkNavy)
+                                        .multilineTextAlignment(.center)
+                                        .padding(.horizontal, 8)
                                 }
+                                .padding(.top, 4)
                                 
-                                Text("\"\(word.example)\"")
-                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                                    .italic()
-                                    .foregroundColor(AppTheme.textDark)
-                                    .lineLimit(3)
+                                HStack(spacing: 12) {
+                                    // Audio Player Button
+                                    Button(action: {
+                                        detailViewModel.playAudio()
+                                    }) {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: detailViewModel.isPlaying ? "speaker.wave.3.fill" : "speaker.wave.2.fill")
+                                            Text("Nghe phát âm")
+                                        }
+                                        .fontCaption()
+                                        .foregroundColor(DesignSystem.Colors.darkNavy)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 10)
+                                        .background(DesignSystem.Colors.primaryLight)
+                                        .cornerRadius(12)
+                                    }
+                                    
+                                    // Save Button
+                                    Button(action: {
+                                        showingSaveSheet = true
+                                    }) {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "folder.badge.plus")
+                                            Text("Lưu vào bộ từ")
+                                        }
+                                        .fontCaption()
+                                        .foregroundColor(DesignSystem.Colors.darkNavy)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 10)
+                                        .background(DesignSystem.Colors.primaryLight)
+                                        .cornerRadius(12)
+                                    }
+                                }
+                                .padding(.top, 8)
                             }
-                            .padding(16)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .cuteCardStyle()
+                            .frame(maxWidth: .infinity)
                         }
                         .padding(.horizontal, 20)
                         
-                        // MARK: - 3. Pronunciation Practice Card (Luyện Phát Âm 🎙️)
-                        VStack(spacing: 14) {
-                            HStack(spacing: 6) {
-                                Text("🎙️")
-                                Text("Luyện phát âm tiếng Anh")
-                                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                                    .foregroundColor(AppTheme.textMuted)
-                                Spacer()
-                            }
-                            
-                            if speechRecognizer.isRecording {
-                                // Recording voice visualizer mockup and live transcript
-                                VStack(spacing: 12) {
-                                    HStack(spacing: 8) {
-                                        Circle()
-                                            .fill(Color.red)
-                                            .frame(width: 8, height: 8)
-                                            .opacity(0.8)
-                                        Text("Đang ghi âm... Hãy nói từ này")
-                                            .font(.system(size: 12, weight: .bold, design: .rounded))
-                                            .foregroundColor(.red)
-                                    }
-                                    
-                                    Text(speechRecognizer.transcript.isEmpty ? "..." : "\"\(speechRecognizer.transcript)\"")
-                                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                                        .foregroundColor(AppTheme.textDark)
-                                        .multilineTextAlignment(.center)
-                                        .padding(.horizontal)
+                        // MARK: - 2. PRONUNCIATION PRACTICE CARD
+                        SoftCard(padding: 20) {
+                            VStack(spacing: 14) {
+                                HStack(spacing: 6) {
+                                    Text("🎙️")
+                                    Text("Luyện phát âm từ này")
+                                        .fontSubheading()
+                                        .foregroundColor(DesignSystem.Colors.darkNavy)
+                                    Spacer()
                                 }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
-                            } else if showingResult {
-                                // Result accuracy score feedback cards
-                                VStack(spacing: 10) {
-                                    HStack {
-                                        Text("Bạn vừa đọc:")
-                                            .font(.system(size: 13, weight: .semibold, design: .rounded))
-                                            .foregroundColor(AppTheme.textMuted)
-                                        Text("\"\(speechRecognizer.transcript)\"")
-                                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                                            .foregroundColor(AppTheme.textDark)
-                                    }
-                                    
-                                    HStack(spacing: 8) {
-                                        Text("Độ chính xác: \(score)%")
-                                            .font(.system(size: 15, weight: .bold, design: .rounded))
-                                            .foregroundColor(score >= 80 ? Color(hex: "27AE60") : (score >= 50 ? Color.orange : Color.red))
-                                            .padding(.horizontal, 14)
-                                            .padding(.vertical, 6)
-                                            .background((score >= 80 ? Color(hex: "27AE60") : (score >= 50 ? Color.orange : Color.red)).opacity(0.12))
-                                            .cornerRadius(10)
-                                    }
-                                    
-                                    Text(score >= 80 ? "Tuyệt vời! Bạn phát âm rất chuẩn 🌟" : (score >= 50 ? "Khá tốt! Phát âm gần đúng rồi 👍" : "Hãy nghe lại loa và thử lại nhé 💪"))
-                                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                                        .foregroundColor(score >= 80 ? Color(hex: "27AE60") : (score >= 50 ? Color.orange : Color.red))
-                                        .multilineTextAlignment(.center)
-                                        .padding(.horizontal)
-                                }
-                            } else {
-                                // Prompt default label
-                                Text("Nhấn nút micro bên dưới để thử phát âm từ này!")
-                                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                                    .foregroundColor(AppTheme.textMuted)
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal)
-                            }
-                            
-                            // Microphone Button
-                            Button(action: {
+                                
                                 if speechRecognizer.isRecording {
-                                    speechRecognizer.stopRecording()
-                                    score = speechRecognizer.calculateAccuracy(target: word.word, spoken: speechRecognizer.transcript)
-                                    showingResult = true
+                                    VStack(spacing: 12) {
+                                        HStack(spacing: 6) {
+                                            Circle()
+                                                .fill(Color.red)
+                                                .frame(width: 8, height: 8)
+                                            Text("Đang ghi âm... Hãy nói từ này")
+                                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                                .foregroundColor(.red)
+                                        }
+                                        
+                                        Text(speechRecognizer.transcript.isEmpty ? "..." : "\"\(speechRecognizer.transcript)\"")
+                                            .fontHeading()
+                                            .foregroundColor(DesignSystem.Colors.darkNavy)
+                                            .multilineTextAlignment(.center)
+                                    }
+                                } else if showingResult {
+                                    VStack(spacing: 12) {
+                                        HStack(spacing: 8) {
+                                            Text("Độ chính xác: \(score)%")
+                                                .fontCaption()
+                                                .foregroundColor(score >= 80 ? DesignSystem.Colors.success : (score >= 50 ? DesignSystem.Colors.warning : .red))
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 6)
+                                                .background((score >= 80 ? DesignSystem.Colors.success : (score >= 50 ? DesignSystem.Colors.warning : .red)).opacity(0.12))
+                                                .cornerRadius(8)
+                                        }
+                                        
+                                        Text(score >= 80 ? "Tuyệt vời! Bạn phát âm rất chuẩn 🌟" : (score >= 50 ? "Khá tốt! Phát âm gần đúng rồi 👍" : "Hãy nghe lại và thử lại nhé 💪"))
+                                            .fontBodySecondary()
+                                            .foregroundColor(score >= 80 ? DesignSystem.Colors.success : (score >= 50 ? DesignSystem.Colors.warning : .red))
+                                            .multilineTextAlignment(.center)
+                                    }
                                 } else {
-                                    showingResult = false
-                                    speechRecognizer.startRecording()
+                                    Text("Nhấn nút micro bên dưới để tập nói từ này!")
+                                        .fontBodySecondary()
+                                        .foregroundColor(DesignSystem.Colors.secondaryText)
+                                        .multilineTextAlignment(.center)
                                 }
-                            }) {
-                                ZStack {
-                                    Circle()
-                                        .fill(speechRecognizer.isRecording ? Color.red.opacity(0.15) : AppTheme.primaryMint.opacity(0.15))
-                                        .frame(width: 60, height: 60)
-                                    
-                                    Image(systemName: speechRecognizer.isRecording ? "stop.fill" : "mic.fill")
-                                        .font(.system(size: 24, weight: .bold))
-                                        .foregroundColor(speechRecognizer.isRecording ? Color.red : AppTheme.primaryMint)
+                                
+                                // Microphone Action Button
+                                Button(action: {
+                                    if speechRecognizer.isRecording {
+                                        speechRecognizer.stopRecording()
+                                        score = speechRecognizer.calculateAccuracy(target: word.word, spoken: speechRecognizer.transcript)
+                                        showingResult = true
+                                    } else {
+                                        showingResult = false
+                                        speechRecognizer.startRecording()
+                                    }
+                                }) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(speechRecognizer.isRecording ? Color.red.opacity(0.12) : DesignSystem.Colors.primary.opacity(0.15))
+                                            .frame(width: 56, height: 56)
+                                        
+                                        Image(systemName: speechRecognizer.isRecording ? "stop.fill" : "mic.fill")
+                                            .font(.system(size: 20, weight: .bold))
+                                            .foregroundColor(speechRecognizer.isRecording ? Color.red : DesignSystem.Colors.darkNavy)
+                                    }
                                 }
+                                .padding(.top, 4)
                             }
-                            .padding(.top, 4)
-                            
-                            if let err = speechRecognizer.errorMessage {
-                                Text(err)
-                                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-                                    .foregroundColor(.red)
-                                    .multilineTextAlignment(.center)
-                                    .padding(.top, 4)
-                            }
+                            .frame(maxWidth: .infinity)
                         }
-                        .padding(16)
-                        .frame(maxWidth: .infinity)
-                        .cuteCardStyle()
                         .padding(.horizontal, 20)
                     }
-                    .padding(.top, 16)
-                    .padding(.bottom, 20)
+                    .padding(.vertical, 20)
                 }
                 
-                // MARK: - 4. Footer Interactive Actions (Favorites & Done)
+                // MARK: - 3. FOOTER INTERACTIVE ACTIONS
                 HStack(spacing: 16) {
-                    // Favorite Toggle Heart Button
+                    // Favorite Heart Button
                     Button(action: {
                         isFavorite.toggle()
                         Task {
@@ -221,43 +226,46 @@ struct WordDetailView: View {
                     }) {
                         ZStack {
                             RoundedRectangle(cornerRadius: 18)
-                                .fill(isFavorite ? AppTheme.primaryCoral.opacity(0.15) : Color.white)
+                                .fill(isFavorite ? DesignSystem.Colors.accentPink.opacity(0.15) : DesignSystem.Colors.card)
                                 .frame(width: 56, height: 56)
-                                .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 4)
+                                .designShadow()
                             
                             Image(systemName: isFavorite ? "heart.fill" : "heart")
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(isFavorite ? AppTheme.primaryCoral : AppTheme.textLight)
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundColor(isFavorite ? DesignSystem.Colors.accentPink : DesignSystem.Colors.secondaryText)
                         }
                     }
                     
-                    // Checkmark Learned Button
-                    PrimaryCuteButton(
-                        title: isLearned ? "Đã thuộc từ này ✓" : "Đã thuộc từ này 🌟",
-                        iconName: isLearned ? "checkmark.circle.fill" : "star.fill",
-                        backgroundColor: isLearned ? Color(hex: "27AE60") : AppTheme.primaryMint,
-                        shadowColor: isLearned ? Color(hex: "1E8449") : Color(hex: "2ECC71")
-                    ) {
+                    // Don't know / I know actions
+                    SecondaryButton(title: "Chưa thuộc") {
+                        dismiss()
+                    }
+                    .frame(maxWidth: 130)
+                    
+                    PrimaryButton(title: isLearned ? "Đã thuộc ✓" : "Đã thuộc 🌟") {
                         if !isLearned {
                             isLearned = true
                             Task {
                                 await viewModel.markAsLearned(wordId: word.id)
                             }
                         }
+                        dismiss()
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.bottom, 30)
-                .background(Color.white.opacity(0.01)) // Subtle alignment layer
+                .padding(.bottom, 24)
             }
         }
-        .navigationTitle(word.word)
+        .navigationTitle("Học Từ Vựng")
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear {
-            // Guarantee speech session stops when navigating back
             if speechRecognizer.isRecording {
                 speechRecognizer.stopRecording()
             }
+        }
+        .sheet(isPresented: $showingSaveSheet) {
+            SaveWordBottomSheet(word: word, viewModel: viewModel)
+                .presentationDetents([.medium, .large])
         }
     }
 }

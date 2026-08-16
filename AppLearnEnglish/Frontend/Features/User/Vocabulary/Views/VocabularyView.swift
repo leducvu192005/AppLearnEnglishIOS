@@ -6,7 +6,7 @@
 import SwiftUI
 
 struct VocabularyView: View {
-    @StateObject private var viewModel = VocabularyViewModel()
+    @EnvironmentObject var viewModel: VocabularyViewModel
     @State private var showAddTopicSheet = false
     
     let filterOptions = ["Tất cả", "Đời sống", "Du lịch", "Công sở", "Công nghệ", "Cá nhân"]
@@ -234,5 +234,6 @@ struct AddTopicSheet: View {
 #Preview {
     NavigationStack {
         VocabularyView()
+            .environmentObject(VocabularyViewModel())
     }
 }

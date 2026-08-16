@@ -18,8 +18,8 @@ struct LoginView: View {
             // Error Message Display
             if let error = localErrorMessage ?? authService.errorMessage {
                 Text(error)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundColor(AppTheme.primaryCoral)
+                    .fontCaption()
+                    .foregroundColor(DesignSystem.Colors.accentPink)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 4)
             }
@@ -29,7 +29,7 @@ struct LoginView: View {
                 title: "Email",
                 placeholder: "nhap.email@example.com",
                 iconName: "envelope.fill",
-                iconTintColor: AppTheme.pastelSky,
+                iconTintColor: DesignSystem.Colors.primary,
                 text: $emailText
             )
             
@@ -39,26 +39,23 @@ struct LoginView: View {
                     title: "Mật khẩu",
                     placeholder: "Nhập mật khẩu của bạn",
                     iconName: "lock.fill",
-                    iconTintColor: AppTheme.primaryCoral,
+                    iconTintColor: DesignSystem.Colors.accentPink,
                     isSecure: true,
                     text: $passwordText
                 )
                 
                 Button(action: onForgotPassword) {
                     Text("Quên mật khẩu?")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .foregroundColor(AppTheme.primaryCoral)
+                        .fontCaption()
+                        .foregroundColor(DesignSystem.Colors.accentPink)
                 }
                 .padding(.top, 2)
             }
             
             // Login Button connected to Firebase AuthService
-            PrimaryCuteButton(
+            PrimaryButton(
                 title: "Đăng nhập ngay 🚀",
-                iconName: "arrow.right.circle.fill",
-                backgroundColor: AppTheme.primaryMint,
-                shadowColor: Color(hex: "27AE60"),
-                isLoading: authService.isLoading
+                iconName: "arrow.right.circle.fill"
             ) {
                 localErrorMessage = nil
                 guard !emailText.isEmpty, !passwordText.isEmpty else {
@@ -75,20 +72,22 @@ struct LoginView: View {
                 }
             }
             .padding(.top, 8)
+            .opacity(authService.isLoading ? 0.6 : 1.0)
+            .disabled(authService.isLoading)
             
             // Social Login Section
             VStack(spacing: 14) {
                 HStack(spacing: 12) {
                     Rectangle()
-                        .fill(AppTheme.textLight.opacity(0.3))
+                        .fill(DesignSystem.Colors.secondaryText.opacity(0.2))
                         .frame(height: 1)
                     
                     Text("Hoặc kết nối qua")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundColor(AppTheme.textMuted)
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundColor(DesignSystem.Colors.secondaryText)
                     
                     Rectangle()
-                        .fill(AppTheme.textLight.opacity(0.3))
+                        .fill(DesignSystem.Colors.secondaryText.opacity(0.2))
                         .frame(height: 1)
                 }
                 .padding(.vertical, 4)
@@ -104,16 +103,12 @@ struct LoginView: View {
                                 .foregroundColor(.red)
                             Text("Google")
                                 .font(.system(size: 15, weight: .bold, design: .rounded))
-                                .foregroundColor(AppTheme.textDark)
+                                .foregroundColor(DesignSystem.Colors.darkNavy)
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 48)
-                        .background(Color(hex: "F7F8FA"))
-                        .cornerRadius(16)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.black.opacity(0.06), lineWidth: 1)
-                        )
+                        .background(DesignSystem.Colors.background)
+                        .cornerRadius(DesignSystem.Radius.button)
                     }
                     
                     // Apple Button
@@ -123,19 +118,15 @@ struct LoginView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "applelogo")
                                 .font(.system(size: 18))
-                                .foregroundColor(.black)
+                                .foregroundColor(DesignSystem.Colors.darkNavy)
                             Text("Apple")
                                 .font(.system(size: 15, weight: .bold, design: .rounded))
-                                .foregroundColor(AppTheme.textDark)
+                                .foregroundColor(DesignSystem.Colors.darkNavy)
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 48)
-                        .background(Color(hex: "F7F8FA"))
-                        .cornerRadius(16)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.black.opacity(0.06), lineWidth: 1)
-                        )
+                        .background(DesignSystem.Colors.background)
+                        .cornerRadius(DesignSystem.Radius.button)
                     }
                 }
             }
@@ -151,7 +142,5 @@ struct LoginView: View {
     )
     .environmentObject(AuthService.shared)
     .padding()
-    .cuteCardStyle()
-    .padding()
-    .background(AppTheme.bgGradientStart)
+    .background(DesignSystem.Colors.background)
 }

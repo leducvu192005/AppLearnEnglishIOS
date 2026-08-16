@@ -11,13 +11,17 @@ struct QuestionView: View {
     
     var body: some View {
         VStack(spacing: 20) {
+            // Owl mascot companion posing the question
+            OwlMascot(state: viewModel.isAnswerChecked ? (viewModel.isCorrect ? .celebrating : .encouraging) : .thinking, size: 90)
+                .padding(.top, 10)
+            
             // Question text
             Text(quiz.question)
                 .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundColor(AppTheme.textDark)
+                .foregroundColor(DesignSystem.Colors.darkNavy)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal)
-                .frame(minHeight: 80)
+                .padding(.horizontal, 24)
+                .frame(minHeight: 60)
             
             // Audio button for listening quiz
             if quiz.type == "listening" {
@@ -27,16 +31,17 @@ struct QuestionView: View {
                 }) {
                     HStack(spacing: 8) {
                         Image(systemName: "speaker.wave.3.fill")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.system(size: 14, weight: .bold))
                         Text("Nghe phát âm")
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .fontCaption()
                     }
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-                    .background(AppTheme.pastelSky)
-                    .cornerRadius(18)
+                    .foregroundColor(DesignSystem.Colors.darkNavy)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(DesignSystem.Colors.primaryLight)
+                    .cornerRadius(12)
                 }
+                .buttonStyle(PlainButtonStyle())
                 .padding(.bottom, 10)
             }
             
@@ -51,8 +56,8 @@ struct QuestionView: View {
                     }) {
                         HStack {
                             Text(answer)
-                                .font(.system(size: 16, weight: .bold, design: .rounded))
-                                .foregroundColor(AppTheme.textDark)
+                                .fontBody()
+                                .foregroundColor(DesignSystem.Colors.darkNavy)
                             
                             Spacer()
                             
@@ -60,21 +65,23 @@ struct QuestionView: View {
                             if viewModel.isAnswerChecked {
                                 if isCorrectAnswer {
                                     Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(AppTheme.primaryMint)
+                                        .foregroundColor(DesignSystem.Colors.success)
+                                        .font(.system(size: 20))
                                 } else if isSelected {
                                     Image(systemName: "xmark.circle.fill")
-                                        .foregroundColor(AppTheme.primaryCoral)
+                                        .foregroundColor(DesignSystem.Colors.accentPink)
+                                        .font(.system(size: 20))
                                 }
                             } else if isSelected {
                                 Circle()
-                                    .fill(AppTheme.primaryMint)
+                                    .fill(DesignSystem.Colors.primary)
                                     .frame(width: 10, height: 10)
                             }
                         }
-                        .padding()
+                        .padding(18)
                         .background(
                             RoundedRectangle(cornerRadius: 18)
-                                .fill(Color.white)
+                                .fill(getOptionBgColor(answer: answer, isSelected: isSelected, isCorrectAnswer: isCorrectAnswer))
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 18)
@@ -88,21 +95,33 @@ struct QuestionView: View {
                     .disabled(viewModel.isAnswerChecked)
                 }
             }
-            .padding(.horizontal)
+            .padding(.horizontal, 20)
         }
+    }
+    
+    // Determine background color based on checking status
+    private func getOptionBgColor(answer: String, isSelected: Bool, isCorrectAnswer: Bool) -> Color {
+        if viewModel.isAnswerChecked {
+            if isCorrectAnswer {
+                return DesignSystem.Colors.success.opacity(0.12)
+            } else if isSelected {
+                return DesignSystem.Colors.accentPink.opacity(0.12)
+            }
+        }
+        return DesignSystem.Colors.card
     }
     
     // Determine the border color based on the validation status of the choice
     private func getOptionBorderColor(answer: String, isSelected: Bool, isCorrectAnswer: Bool) -> Color {
         if viewModel.isAnswerChecked {
             if isCorrectAnswer {
-                return AppTheme.primaryMint // Green outline for correct option
+                return DesignSystem.Colors.success
             } else if isSelected {
-                return AppTheme.primaryCoral // Red outline for selected wrong option
+                return DesignSystem.Colors.accentPink
             }
-            return Color.black.opacity(0.06)
+            return Color.black.opacity(0.04)
         } else {
-            return isSelected ? AppTheme.primaryMint : Color.black.opacity(0.06)
+            return isSelected ? DesignSystem.Colors.primary : Color.black.opacity(0.04)
         }
     }
 }
@@ -113,5 +132,5 @@ struct QuestionView: View {
         viewModel: QuizViewModel()
     )
     .padding()
-    .background(AppTheme.bgGradientStart)
+    .background(DesignSystem.Colors.background)
 }

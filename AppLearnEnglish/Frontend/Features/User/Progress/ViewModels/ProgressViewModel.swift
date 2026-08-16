@@ -13,40 +13,19 @@ class ProgressViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
     
-    private let db = Firestore.firestore()
-    private var userId: String? {
-        SessionManager.shared.currentUserModel?.uid
-    }
+    private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Initializer
     init() {
-        Task {
-            await loadProgress()
-        }
-    }
-    
-    // MARK: - Load Progress (Firestore with Fallback & Level Up Calc)
-    @MainActor
-    func loadProgress() async {
-        guard let uid = userId else { return }
         self.isLoading = true
-        self.errorMessage = nil
-        
-        do {
-            let docRef = db.collection("users").document(uid).collection("progress").document("main")
-            let document = try await docRef.getDocument()
-            
-            // Generate some mock study dates for calendar visual representation
-            self.generateMockStudyHistory()
-            
-            if document.exists, let loadedProgress = try? document.data(as: ProgressModel.self) {
-                self.progress = loadedProgress
-            } else {
-                // Fallback: build progress from the main user model attributes
-                if let currentUser = SessionManager.shared.currentUserModel {
-                    let calculatedLevel = max(1, (currentUser.xp / 100) + 1) // 100 XP per level
+        // Observe SessionManager's currentUserModel to keep progress in sync in real-time
+        SessionManager.shared.$currentUserModel
+            .sink { [weak self] userOpt in
+                guard let self = self else { return }
+                if let currentUser = userOpt {
+                    let calculatedLevel = max(1, (currentUser.xp / 100) + 1)
                     
-                    let fallbackProgress = ProgressModel(
+                    self.progress = ProgressModel(
                         totalWords: currentUser.streak * 4, // Simulated words count
                         xp: currentUser.xp,
                         level: calculatedLevel,
@@ -54,18 +33,12 @@ class ProgressViewModel: ObservableObject {
                         dailyGoal: currentUser.dailyGoal,
                         lastStudyDate: Date()
                     )
-                    
-                    self.progress = fallbackProgress
-                    
-                    // Save to firestore progress subcollection so it exists next time
-                    try? docRef.setData(from: fallbackProgress)
+                    self.isLoading = false
                 }
             }
-            self.isLoading = false
-        } catch {
-            print("Failed loading progress from Firestore: \(error.localizedDescription)")
-            self.isLoading = false
-        }
+            .store(in: &cancellables)
+            
+        self.generateMockStudyHistory()
     }
     
     // Helper to generate active days for calendar widget

@@ -14,7 +14,7 @@ class SpeechRecognizer: ObservableObject {
     @Published var permissionGranted: Bool = false
     @Published var errorMessage: String? = nil
     
-    private var audioEngine: AVAudioEngine?
+    private var audioEngine: AVAudioEngine? = nil
     private var inputNode: AVAudioInputNode?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?

@@ -40,6 +40,7 @@ class UserService {
             let streak = data["streak"] as? Int ?? 0
             let level = data["level"] as? String ?? "Beginner"
             let xp = data["xp"] as? Int ?? 0
+            let dailyXP = data["dailyXP"] as? Int ?? 0
             let dailyGoal = data["dailyGoal"] as? Int ?? 20
             
             let timestamp = data["createdAt"] as? Timestamp
@@ -53,6 +54,7 @@ class UserService {
                 streak: streak,
                 level: level,
                 xp: xp,
+                dailyXP: dailyXP,
                 dailyGoal: dailyGoal,
                 createdAt: createdAt
             )
@@ -74,30 +76,36 @@ class UserService {
         let data = document.data() ?? [:]
         
         let currentStreak = data["streak"] as? Int ?? 0
+        let currentDailyXP = data["dailyXP"] as? Int ?? 0
         let lastStudyTimestamp = data["lastStudyDate"] as? Timestamp
         
         var newStreak = currentStreak
+        var newDailyXP = currentDailyXP
         let calendar = Calendar.current
         let today = Date()
         
         if let lastDate = lastStudyTimestamp?.dateValue() {
             if calendar.isDateInToday(lastDate) {
-                // Studied today, streak stays same
-                newStreak = currentStreak
-            } else if calendar.isDateInYesterday(lastDate) {
-                // Studied yesterday, increment streak
-                newStreak = currentStreak + 1
+                // Studied today, streak stays same, add to daily XP
+                newDailyXP = currentDailyXP + xp
             } else {
-                // Missed day(s), reset streak to 1
-                newStreak = 1
+                // New study day (either yesterday or missed days), reset daily XP to this session's XP
+                newDailyXP = xp
+                if calendar.isDateInYesterday(lastDate) {
+                    newStreak = currentStreak + 1
+                } else {
+                    newStreak = 1
+                }
             }
         } else {
             // First study session, start at 1
             newStreak = 1
+            newDailyXP = xp
         }
         
         try await docRef.updateData([
             "xp": FieldValue.increment(Int64(xp)),
+            "dailyXP": newDailyXP,
             "streak": newStreak,
             "lastStudyDate": Timestamp(date: today)
         ])

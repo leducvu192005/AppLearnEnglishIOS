@@ -15,15 +15,16 @@ struct QuizView: View {
     var body: some View {
         ZStack {
             // Background
-            AppTheme.bgGradientStart.ignoresSafeArea()
+            DesignSystem.Colors.background
+                .ignoresSafeArea()
             
             if viewModel.isLoading {
                 VStack(spacing: 12) {
                     ProgressView()
-                        .tint(AppTheme.primaryMint)
+                        .tint(DesignSystem.Colors.primary)
                     Text("Đang chuẩn bị câu hỏi...")
-                        .font(.system(size: 14, design: .rounded))
-                        .foregroundColor(AppTheme.textMuted)
+                        .fontBodySecondary()
+                        .foregroundColor(DesignSystem.Colors.secondaryText)
                 }
             } else if viewModel.showResult {
                 ResultView(viewModel: viewModel) {
@@ -34,14 +35,14 @@ struct QuizView: View {
                     Text("📭")
                         .font(.system(size: 64))
                     Text("Không có câu hỏi nào.")
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .foregroundColor(AppTheme.textMuted)
+                        .fontSubheading()
+                        .foregroundColor(DesignSystem.Colors.secondaryText)
                     
                     Button("Quay lại") {
                         dismiss()
                     }
-                    .foregroundColor(AppTheme.primaryMint)
-                    .fontWeight(.bold)
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundColor(DesignSystem.Colors.primary)
                 }
             } else {
                 VStack(spacing: 0) {
@@ -52,33 +53,33 @@ struct QuizView: View {
                             Button(action: { dismiss() }) {
                                 Image(systemName: "xmark")
                                     .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(AppTheme.textDark)
+                                    .foregroundColor(DesignSystem.Colors.darkNavy)
                             }
                             
                             Spacer()
                             
                             Text("Chủ đề: \(topicName)")
-                                .font(.system(size: 14, weight: .bold, design: .rounded))
-                                .foregroundColor(AppTheme.textMuted)
+                                .fontSubheading()
+                                .foregroundColor(DesignSystem.Colors.darkNavy)
                             
                             Spacer()
                             
                             Text("\(viewModel.currentQuestionIndex + 1)/\(viewModel.quizzes.count)")
-                                .font(.system(size: 14, weight: .black, design: .rounded))
-                                .foregroundColor(AppTheme.primaryMint)
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .foregroundColor(DesignSystem.Colors.primary)
                         }
                         .padding(.horizontal)
-                        .padding(.top, 10)
+                        .padding(.top, 16)
                         
                         // Progress Bar
                         GeometryReader { geo in
                             ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 4)
-                                    .fill(Color.black.opacity(0.04))
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(DesignSystem.Colors.primaryLight)
                                     .frame(height: 8)
                                 
-                                RoundedRectangle(cornerRadius: 4)
-                                    .fill(AppTheme.primaryMint)
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(DesignSystem.Colors.primary)
                                     .frame(
                                         width: geo.size.width * CGFloat(Double(viewModel.currentQuestionIndex + 1) / Double(viewModel.quizzes.count)),
                                         height: 8
@@ -88,14 +89,15 @@ struct QuizView: View {
                         .frame(height: 8)
                         .padding(.horizontal)
                     }
-                    .padding(.bottom, 20)
-                    .background(Color.white)
+                    .padding(.bottom, 16)
+                    .background(DesignSystem.Colors.card)
+                    .designShadow()
                     
                     // MARK: - Active Question View
                     if let currentQuiz = viewModel.currentQuiz {
                         QuestionView(quiz: currentQuiz, viewModel: viewModel)
                             .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .move(edge: .leading).combined(with: .opacity)))
-                            .id(viewModel.currentQuestionIndex) // Triggers transitions when ID changes
+                            .id(viewModel.currentQuestionIndex)
                     }
                     
                     Spacer()
@@ -104,61 +106,67 @@ struct QuizView: View {
                     VStack {
                         if !viewModel.isAnswerChecked {
                             // Check Answer Button
-                            PrimaryCuteButton(
-                                title: "Kiểm tra đáp án 🔍",
-                                backgroundColor: viewModel.selectedAnswer == nil ? Color.gray.opacity(0.3) : AppTheme.primaryMint,
-                                shadowColor: viewModel.selectedAnswer == nil ? Color.clear : Color(hex: "27AE60")
+                            PrimaryButton(
+                                title: "Kiểm tra đáp án 🔍"
                             ) {
                                 viewModel.checkAnswer()
                             }
                             .disabled(viewModel.selectedAnswer == nil)
+                            .opacity(viewModel.selectedAnswer == nil ? 0.6 : 1.0)
                         } else {
-                            // Correct/Incorrect Feedback Banner
-                            VStack(spacing: 12) {
-                                HStack {
+                            // Correct/Incorrect Feedback Banner Card
+                            VStack(spacing: 16) {
+                                HStack(spacing: 12) {
                                     ZStack {
                                         Circle()
-                                            .fill(viewModel.isCorrect ? AppTheme.primaryMint.opacity(0.2) : AppTheme.primaryCoral.opacity(0.2))
-                                            .frame(width: 32, height: 32)
+                                            .fill(viewModel.isCorrect ? DesignSystem.Colors.success.opacity(0.18) : DesignSystem.Colors.accentPink.opacity(0.18))
+                                            .frame(width: 36, height: 36)
                                         
                                         Image(systemName: viewModel.isCorrect ? "checkmark" : "xmark")
-                                            .font(.system(size: 15, weight: .bold))
-                                            .foregroundColor(viewModel.isCorrect ? AppTheme.primaryMint : AppTheme.primaryCoral)
+                                            .font(.system(size: 16, weight: .bold))
+                                            .foregroundColor(viewModel.isCorrect ? DesignSystem.Colors.success : DesignSystem.Colors.accentPink)
                                     }
                                     
                                     Text(viewModel.isCorrect ? "Tuyệt vời! Chính xác rồi 🎉" : "Rất tiếc! Chưa chính xác 😢")
                                         .font(.system(size: 16, weight: .bold, design: .rounded))
-                                        .foregroundColor(viewModel.isCorrect ? AppTheme.primaryMint : AppTheme.primaryCoral)
+                                        .foregroundColor(viewModel.isCorrect ? DesignSystem.Colors.success : DesignSystem.Colors.accentPink)
                                     
                                     Spacer()
                                 }
                                 
-                                PrimaryCuteButton(
-                                    title: viewModel.currentQuestionIndex + 1 == viewModel.quizzes.count ? "Xem kết quả 🏁" : "Câu tiếp theo ➔",
-                                    backgroundColor: viewModel.isCorrect ? AppTheme.primaryMint : AppTheme.primaryCoral,
-                                    shadowColor: viewModel.isCorrect ? Color(hex: "27AE60") : Color(hex: "E74C3C")
-                                ) {
+                                Button(action: {
                                     withAnimation {
                                         viewModel.nextQuestion()
                                     }
+                                }) {
+                                    HStack(spacing: 8) {
+                                        Text(viewModel.currentQuestionIndex + 1 == viewModel.quizzes.count ? "Xem kết quả 🏁" : "Câu tiếp theo ➔")
+                                            .fontSubheading()
+                                    }
+                                    .foregroundColor(DesignSystem.Colors.darkNavy)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                                    .background(viewModel.isCorrect ? DesignSystem.Colors.success : DesignSystem.Colors.accentPink)
+                                    .cornerRadius(DesignSystem.Radius.button)
                                 }
+                                .buttonStyle(PlainButtonStyle())
                             }
-                            .padding()
-                            .background(Color.white)
+                            .padding(20)
+                            .background(DesignSystem.Colors.card)
                             .cornerRadius(24)
-                            .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: -4)
-                            .transition(.move(edge: .bottom))
+                            .designShadow()
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
                         }
                     }
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 30)
+                    .padding(.bottom, 24)
                 }
             }
         }
         .navigationBarHidden(true)
         .onAppear {
             Task {
-                await viewModel.loadQuizzes(for: topicId)
+                await viewModel.loadQuizzes(for: topicId, topicName: topicName)
             }
         }
     }

@@ -21,8 +21,8 @@ struct RegisterView: View {
             // Error Message Display
             if let error = localErrorMessage ?? authService.errorMessage {
                 Text(error)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundColor(AppTheme.primaryCoral)
+                    .fontCaption()
+                    .foregroundColor(DesignSystem.Colors.accentPink)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 4)
             }
@@ -32,7 +32,7 @@ struct RegisterView: View {
                 title: "Họ và tên",
                 placeholder: "Ví dụ: Alex Nguyễn",
                 iconName: "person.fill",
-                iconTintColor: AppTheme.pastelLavender,
+                iconTintColor: DesignSystem.Colors.primary,
                 text: $nameText
             )
             
@@ -41,7 +41,7 @@ struct RegisterView: View {
                 title: "Email",
                 placeholder: "nhap.email@example.com",
                 iconName: "envelope.fill",
-                iconTintColor: AppTheme.pastelSky,
+                iconTintColor: DesignSystem.Colors.primary,
                 text: $emailText
             )
             
@@ -50,7 +50,7 @@ struct RegisterView: View {
                 title: "Mật khẩu",
                 placeholder: "Tối thiểu 6 ký tự",
                 iconName: "lock.fill",
-                iconTintColor: AppTheme.primaryCoral,
+                iconTintColor: DesignSystem.Colors.accentPink,
                 isSecure: true,
                 text: $passwordText
             )
@@ -60,7 +60,7 @@ struct RegisterView: View {
                 title: "Xác nhận mật khẩu",
                 placeholder: "Nhập lại mật khẩu",
                 iconName: "lock.shield.fill",
-                iconTintColor: AppTheme.pastelYellow,
+                iconTintColor: DesignSystem.Colors.warning,
                 isSecure: true,
                 text: $confirmPasswordText
             )
@@ -74,32 +74,29 @@ struct RegisterView: View {
                 }) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(isAgreed ? AppTheme.primaryMint : Color(hex: "E2E8F0"))
+                            .fill(isAgreed ? DesignSystem.Colors.primary : Color(hex: "E2E8F0"))
                             .frame(width: 22, height: 22)
                         
                         if isAgreed {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundColor(DesignSystem.Colors.darkNavy)
                         }
                     }
                 }
                 
-                Text("Tôi đồng ý với **Điều khoản & Chính sách bảo mật**")
+                Text("Tôi đồng ý với **Điều khoản & Chính sách**")
                     .font(.system(size: 12, design: .rounded))
-                    .foregroundColor(AppTheme.textMuted)
+                    .foregroundColor(DesignSystem.Colors.secondaryText)
                 
                 Spacer()
             }
             .padding(.top, 4)
             
             // Register Button connected to Firebase AuthService
-            PrimaryCuteButton(
+            PrimaryButton(
                 title: "Tạo tài khoản ngay 🌟",
-                iconName: "sparkles",
-                backgroundColor: AppTheme.primaryCoral,
-                shadowColor: Color(hex: "E74C3C"),
-                isLoading: authService.isLoading
+                iconName: "sparkles"
             ) {
                 localErrorMessage = nil
                 
@@ -128,6 +125,8 @@ struct RegisterView: View {
                 }
             }
             .padding(.top, 6)
+            .opacity(authService.isLoading ? 0.6 : 1.0)
+            .disabled(authService.isLoading)
         }
     }
 }
@@ -142,7 +141,5 @@ struct RegisterView: View {
     )
     .environmentObject(AuthService.shared)
     .padding()
-    .cuteCardStyle()
-    .padding()
-    .background(AppTheme.bgGradientStart)
+    .background(DesignSystem.Colors.background)
 }

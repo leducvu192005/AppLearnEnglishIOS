@@ -32,7 +32,7 @@ class QuizViewModel: ObservableObject {
     
     // MARK: - Load Quizzes (Firestore with Mock Fallback)
     @MainActor
-    func loadQuizzes(for topicId: String) async {
+    func loadQuizzes(for topicId: String, topicName: String) async {
         self.isLoading = true
         self.errorMessage = nil
         
@@ -50,6 +50,22 @@ class QuizViewModel: ObservableObject {
             }
             
             self.resetQuiz()
+            
+            // Check if there is saved progress for this topicId to resume it
+            let savedTopicId = UserDefaults.standard.string(forKey: "AppLearnEnglish_ActiveQuizTopicId")
+            if savedTopicId == topicId {
+                let savedIndex = UserDefaults.standard.integer(forKey: "AppLearnEnglish_ActiveQuizIndex")
+                if savedIndex < self.quizzes.count {
+                    self.currentQuestionIndex = savedIndex
+                }
+            } else {
+                // Save initial progress
+                UserDefaults.standard.set(topicId, forKey: "AppLearnEnglish_ActiveQuizTopicId")
+                UserDefaults.standard.set(topicName, forKey: "AppLearnEnglish_ActiveQuizTopicName")
+                UserDefaults.standard.set(0, forKey: "AppLearnEnglish_ActiveQuizIndex")
+                UserDefaults.standard.set(self.quizzes.count, forKey: "AppLearnEnglish_ActiveQuizTotal")
+            }
+            
             self.isLoading = false
         } catch {
             print("Firestore fetch quizzes failed: \(error.localizedDescription). Using Mock data.")
@@ -85,8 +101,11 @@ class QuizViewModel: ObservableObject {
         
         if currentQuestionIndex + 1 < quizzes.count {
             currentQuestionIndex += 1
+            // Save progress
+            UserDefaults.standard.set(currentQuestionIndex, forKey: "AppLearnEnglish_ActiveQuizIndex")
         } else {
             showResult = true
+            clearQuizProgress()
             Task {
                 await saveXPToFirestore()
             }
@@ -101,6 +120,13 @@ class QuizViewModel: ObservableObject {
         score = 0
         wrongQuizzes.removeAll()
         showResult = false
+    }
+    
+    func clearQuizProgress() {
+        UserDefaults.standard.removeObject(forKey: "AppLearnEnglish_ActiveQuizTopicId")
+        UserDefaults.standard.removeObject(forKey: "AppLearnEnglish_ActiveQuizTopicName")
+        UserDefaults.standard.removeObject(forKey: "AppLearnEnglish_ActiveQuizIndex")
+        UserDefaults.standard.removeObject(forKey: "AppLearnEnglish_ActiveQuizTotal")
     }
     
     // MARK: - Save XP earned to Firestore profile

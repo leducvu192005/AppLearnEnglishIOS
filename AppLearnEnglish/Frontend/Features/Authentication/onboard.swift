@@ -11,56 +11,46 @@ struct OnboardingView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Soft Background
-                LinearGradient(
-                    colors: [AppTheme.bgGradientStart, AppTheme.bgGradientEnd],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
+                // Background
+                DesignSystem.Colors.background
+                    .ignoresSafeArea()
                 
-                VStack(spacing: 30) {
+                VStack(spacing: DesignSystem.Spacing.large) {
                     Spacer()
                     
-                    // Cute Hero Mascot Card
+                    // Large brand illustration (Mascot)
                     ZStack {
-                        RoundedRectangle(cornerRadius: 32)
-                            .fill(Color.white)
-                            .frame(width: 200, height: 200)
-                            .shadow(color: AppTheme.primaryMint.opacity(0.25), radius: 20, x: 0, y: 10)
+                        Circle()
+                            .fill(DesignSystem.Colors.primaryLight)
+                            .frame(width: 220, height: 220)
+                            .designShadow()
                         
-                        VStack(spacing: 12) {
-                            Text("🐥💬🇬🇧")
-                                .font(.system(size: 64))
-                            
-                            Text("English AI")
-                                .font(.system(size: 20, weight: .black, design: .rounded))
-                                .foregroundColor(AppTheme.primaryMint)
-                        }
+                        OwlMascot(state: .greeting, size: 180)
                     }
                     
+                    // Brand Message
                     VStack(spacing: 12) {
                         Text("Học Tiếng Anh\nDễ Dàng & Thú Vị!")
-                            .font(.system(size: 32, weight: .black, design: .rounded))
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
                             .multilineTextAlignment(.center)
-                            .foregroundColor(AppTheme.textDark)
+                            .foregroundColor(DesignSystem.Colors.darkNavy)
                         
-                        Text("Luyện Nói 1-1 cùng AI Tutor, nâng trình từ vựng, luyện nghe & viết siêu hiệu quả mỗi ngày.")
-                            .font(.system(size: 15, weight: .medium, design: .rounded))
-                            .foregroundColor(AppTheme.textMuted)
+                        Text("Luyện hội thoại 1-1 cùng AI Tutor, chinh phục từ vựng và tự tin giao tiếp tiếng Anh mỗi ngày.")
+                            .fontBodySecondary()
+                            .foregroundColor(DesignSystem.Colors.secondaryText)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 32)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
+                    .padding(.top, 16)
                     
                     Spacer()
                     
                     // Action Buttons
                     VStack(spacing: 16) {
-                        PrimaryCuteButton(
+                        PrimaryButton(
                             title: "Bắt đầu ngay ✨",
-                            iconName: "sparkles",
-                            backgroundColor: AppTheme.primaryMint,
-                            shadowColor: Color(hex: "27AE60")
+                            iconName: "sparkles"
                         ) {
                             navigateToAuth = true
                         }
@@ -70,16 +60,17 @@ struct OnboardingView: View {
                         }) {
                             HStack(spacing: 4) {
                                 Text("Đã có tài khoản?")
-                                    .foregroundColor(AppTheme.textMuted)
+                                    .foregroundColor(DesignSystem.Colors.secondaryText)
                                 Text("Đăng nhập")
                                     .fontWeight(.bold)
-                                    .foregroundColor(AppTheme.primaryCoral)
+                                    .foregroundColor(DesignSystem.Colors.primary)
                             }
                             .font(.system(size: 15, design: .rounded))
                         }
+                        .padding(.vertical, 8)
                     }
                     .padding(.horizontal, 24)
-                    .padding(.bottom, 20)
+                    .padding(.bottom, 24)
                 }
             }
             .navigationDestination(isPresented: $navigateToAuth) {

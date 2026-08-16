@@ -23,7 +23,7 @@ struct AIChatView: View {
                         .foregroundColor(AppTheme.textMuted)
                 }
                 
-                Spacer()
+                Spacer()	
                 
                 // Clear chat button
                 Button(action: { viewModel.clearChat() }) {
@@ -86,14 +86,14 @@ struct AIChatView: View {
                     }
                     .padding()
                 }
-                .onChange(of: viewModel.messages.count) { _, count in
+                .onChange(of: viewModel.messages.count) { count in
                     if count > 0 {
                         withAnimation {
                             proxy.scrollTo(count - 1, anchor: .bottom)
                         }
                     }
                 }
-                .onChange(of: viewModel.isLoading) { _, loading in
+                .onChange(of: viewModel.isLoading) { loading in
                     if loading {
                         withAnimation {
                             proxy.scrollTo("typing", anchor: .bottom)

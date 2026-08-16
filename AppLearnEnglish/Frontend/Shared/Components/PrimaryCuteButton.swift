@@ -61,13 +61,17 @@ struct PressableButtonStyle: ButtonStyle {
     @Binding var isPressed: Bool
     
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
-            .onChange(of: configuration.isPressed) { _, newValue in
-                withAnimation(.interactiveSpring(response: 0.15, dampingFraction: 0.7)) {
-                    isPressed = newValue
+        if #available(iOS 17.0, *) {
+            configuration.label
+                .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+                .onChange(of: configuration.isPressed) { _, newValue in
+                    withAnimation(.interactiveSpring(response: 0.15, dampingFraction: 0.7)) {
+                        isPressed = newValue
+                    }
                 }
-            }
+        } else {
+            // Fallback on earlier versions
+        }
     }
 }
 

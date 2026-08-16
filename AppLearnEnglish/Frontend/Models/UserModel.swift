@@ -16,6 +16,7 @@ struct UserModel: Codable, Identifiable, Equatable {
     var streak: Int
     var level: String      // e.g. "Beginner"
     var xp: Int
+    var dailyXP: Int?      // daily XP earned
     var dailyGoal: Int     // e.g. 20 (XP target per day)
     var createdAt: Date
     
@@ -28,6 +29,7 @@ struct UserModel: Codable, Identifiable, Equatable {
         case streak
         case level
         case xp
+        case dailyXP
         case dailyGoal
         case createdAt
     }

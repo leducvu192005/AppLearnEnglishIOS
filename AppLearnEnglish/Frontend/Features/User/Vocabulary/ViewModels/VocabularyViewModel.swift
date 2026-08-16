@@ -23,8 +23,13 @@ class VocabularyViewModel: ObservableObject {
     @Published var customTopics: [Topic] = []
     @Published var customWords: [VocabularyWord] = []
     
+    // Custom user collections
+    @Published var userCollections: [UserCollection] = []
+    @Published var allWords: [VocabularyWord] = []
+    
     private let customTopicsKey = "AppLearnEnglish_CustomTopics"
     private let customWordsKey = "AppLearnEnglish_CustomWords"
+    private let userCollectionsKey = "AppLearnEnglish_UserCollections"
     
     private let vocabularyService = VocabularyService.shared
     private var userId: String? {
@@ -35,6 +40,7 @@ class VocabularyViewModel: ObservableObject {
     init() {
         loadCustomTopics()
         loadCustomWords()
+        loadUserCollections()
         Task {
             await loadTopics()
             await loadUserPreferences()
@@ -113,6 +119,12 @@ class VocabularyViewModel: ObservableObject {
         do {
             self.topics = try await vocabularyService.fetchTopics()
             self.isLoading = false
+            
+            // Schedule passive learning notifications
+            if let allWords = try? await vocabularyService.fetchAllVocabulary() {
+                self.allWords = allWords
+                NotificationManager.shared.schedulePassiveLearningNotifications(words: allWords)
+            }
         } catch {
             self.errorMessage = error.localizedDescription
             self.isLoading = false
@@ -200,11 +212,69 @@ class VocabularyViewModel: ObservableObject {
         do {
             try await vocabularyService.markWordAsLearned(userId: uid, wordId: wordId)
             // Reload user progress stats in the session
-            SessionManager.shared.listenToAuthChanges()
+            await SessionManager.shared.reloadUserProfile()
         } catch {
             // Revert on error
             learnedWordIds.remove(wordId)
             self.errorMessage = error.localizedDescription
+        }
+    }
+    
+    // MARK: - Save Oxford Word from notification tap
+    func addWordFromNotification(word: [String: String]) {
+        let id = word["id"] ?? UUID().uuidString
+        let text = word["word"] ?? ""
+        let phonetic = word["phonetic"] ?? ""
+        let meaning = word["meaning"] ?? ""
+        let example = word["example"] ?? ""
+        let level = word["level"] ?? "Beginner"
+        
+        let topicId = "custom_oxford_3000"
+        
+        // Find or create "Oxford 3000" custom topic
+        if !customTopics.contains(where: { $0.id == topicId }) {
+            let oxfordTopic = Topic(
+                id: topicId,
+                name: "Oxford 3000 🎧",
+                description: "Các từ vựng đã tích lũy từ thông báo thụ động",
+                image: "headphones.circle.fill",
+                totalWords: 0
+            )
+            customTopics.append(oxfordTopic)
+            saveCustomTopics()
+        }
+        
+        // Check if word is already added
+        if customWords.contains(where: { $0.word.lowercased() == text.lowercased() }) {
+            return
+        }
+        
+        let newWord = VocabularyWord(
+            id: id,
+            word: text,
+            phonetic: phonetic,
+            meaning: meaning,
+            example: example,
+            image: "",
+            audio: "",
+            topicId: topicId,
+            level: level
+        )
+        
+        customWords.append(newWord)
+        saveCustomWords()
+        
+        // Increment the totalWords count inside the "Oxford 3000 🎧" topic
+        if let idx = customTopics.firstIndex(where: { $0.id == topicId }) {
+            let topic = customTopics[idx]
+            customTopics[idx] = Topic(
+                id: topic.id,
+                name: topic.name,
+                description: topic.description,
+                image: topic.image,
+                totalWords: topic.totalWords + 1
+            )
+            saveCustomTopics()
         }
     }
     
@@ -274,6 +344,96 @@ class VocabularyViewModel: ObservableObject {
     private func saveCustomWords() {
         if let encoded = try? JSONEncoder().encode(customWords) {
             UserDefaults.standard.set(encoded, forKey: customWordsKey)
+        }
+    }
+    
+    // MARK: - User Custom Collections management
+    func loadUserCollections() {
+        if let data = UserDefaults.standard.data(forKey: userCollectionsKey),
+           let decoded = try? JSONDecoder().decode([UserCollection].self, from: data) {
+            self.userCollections = decoded
+        } else {
+            // Seed defaults
+            self.userCollections = [
+                UserCollection(id: "fav_words", name: "Bộ từ yêu thích ❤️", description: "Những từ vựng bạn yêu thích học tập", wordIds: [], icon: "heart.circle.fill"),
+                UserCollection(id: "travel_words", name: "Từ vựng Du lịch ✈️", description: "Học phục vụ các chuyến đi chơi", wordIds: [], icon: "airplane.circle.fill")
+            ]
+            saveUserCollections()
+        }
+    }
+    
+    func saveUserCollections() {
+        if let encoded = try? JSONEncoder().encode(userCollections) {
+            UserDefaults.standard.set(encoded, forKey: userCollectionsKey)
+        }
+    }
+    
+    func createUserCollection(name: String, description: String, icon: String = "book.closed.circle.fill") {
+        let newCol = UserCollection(
+            id: "usercol_\(UUID().uuidString)",
+            name: name,
+            description: description,
+            wordIds: [],
+            icon: icon
+        )
+        userCollections.append(newCol)
+        saveUserCollections()
+    }
+    
+    func addWordToCollections(wordId: String, collectionIds: [String]) {
+        for idx in 0..<userCollections.count {
+            let col = userCollections[idx]
+            if collectionIds.contains(col.id) {
+                if !col.wordIds.contains(wordId) {
+                    userCollections[idx].wordIds.append(wordId)
+                }
+            } else {
+                userCollections[idx].wordIds.removeAll(where: { $0 == wordId })
+            }
+        }
+        saveUserCollections()
+    }
+    
+    func getCollectionsContainingWord(wordId: String) -> [String] {
+        return userCollections.filter { $0.wordIds.contains(wordId) }.map { $0.id }
+    }
+    
+    func getWordsInCollection(collectionId: String) -> [VocabularyWord] {
+        guard let collection = userCollections.first(where: { $0.id == collectionId }) else { return [] }
+        return allWords.filter { collection.wordIds.contains($0.id) }
+    }
+    
+    func addCustomWordToCollection(word: String, phonetic: String, meaning: String, example: String, collectionId: String) {
+        let newWordId = "custom_word_\(UUID().uuidString)"
+        let newWord = VocabularyWord(
+            id: newWordId,
+            word: word,
+            phonetic: phonetic,
+            meaning: meaning,
+            example: example,
+            image: "",
+            audio: "",
+            topicId: "custom_collection_\(collectionId)",
+            level: "Custom"
+        )
+        customWords.append(newWord)
+        allWords.append(newWord)
+        saveCustomWords()
+        
+        if let idx = userCollections.firstIndex(where: { $0.id == collectionId }) {
+            userCollections[idx].wordIds.append(newWordId)
+            saveUserCollections()
+        }
+    }
+    
+    func addExistingWordsToCollection(wordIds: [String], collectionId: String) {
+        if let idx = userCollections.firstIndex(where: { $0.id == collectionId }) {
+            for wId in wordIds {
+                if !userCollections[idx].wordIds.contains(wId) {
+                    userCollections[idx].wordIds.append(wId)
+                }
+            }
+            saveUserCollections()
         }
     }
 }

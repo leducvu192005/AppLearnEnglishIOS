@@ -13,34 +13,34 @@ struct GrammarResultView: View {
             // Original Text Card
             VStack(alignment: .leading, spacing: 8) {
                 Text("Văn bản gốc:")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundColor(AppTheme.textMuted)
+                    .fontCaption()
+                    .foregroundColor(DesignSystem.Colors.secondaryText)
                 
                 Text(result.original)
-                    .font(.system(size: 16, weight: .medium, design: .rounded))
-                    .foregroundColor(AppTheme.primaryCoral)
+                    .fontSubheading()
+                    .foregroundColor(DesignSystem.Colors.accentPink)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(16)
             .frame(maxWidth: .infinity)
-            .background(AppTheme.primaryCoral.opacity(0.08))
-            .cornerRadius(18)
+            .background(DesignSystem.Colors.accentPink.opacity(0.1))
+            .cornerRadius(16)
             
             // Corrected Text Card
             VStack(alignment: .leading, spacing: 8) {
                 Text("Văn bản đã sửa:")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundColor(AppTheme.textMuted)
+                    .fontCaption()
+                    .foregroundColor(DesignSystem.Colors.secondaryText)
                 
                 Text(result.corrected)
-                    .font(.system(size: 16, weight: .black, design: .rounded))
-                    .foregroundColor(AppTheme.primaryMint)
+                    .fontSubheading()
+                    .foregroundColor(DesignSystem.Colors.success)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(16)
             .frame(maxWidth: .infinity)
-            .background(AppTheme.primaryMint.opacity(0.08))
-            .cornerRadius(18)
+            .background(DesignSystem.Colors.success.opacity(0.1))
+            .cornerRadius(16)
             
             // Changes Lists
             if result.changes.isEmpty {
@@ -48,16 +48,16 @@ struct GrammarResultView: View {
                     Text("🎉")
                         .font(.system(size: 20))
                     Text("Chúc mừng! Câu viết của bạn đã chuẩn ngữ pháp.")
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .foregroundColor(AppTheme.primaryMint)
+                        .fontSubheading()
+                        .foregroundColor(DesignSystem.Colors.success)
                 }
                 .padding(.vertical, 10)
                 .frame(maxWidth: .infinity, alignment: .center)
             } else {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Chi tiết lỗi sai (\(result.changes.count)):")
-                        .font(.system(size: 16, weight: .black, design: .rounded))
-                        .foregroundColor(AppTheme.textDark)
+                        .fontSubheading()
+                        .foregroundColor(DesignSystem.Colors.darkNavy)
                         .padding(.top, 8)
                     
                     ForEach(result.changes) { change in
@@ -81,5 +81,5 @@ struct GrammarResultView: View {
         ]
     ))
     .padding()
-    .background(AppTheme.bgGradientStart)
+    .background(DesignSystem.Colors.background)
 }
