@@ -19,6 +19,7 @@ struct UserModel: Codable, Identifiable, Equatable {
     var dailyXP: Int?      // daily XP earned
     var dailyGoal: Int     // e.g. 20 (XP target per day)
     var createdAt: Date
+    var avatar: String?    // selected avatar emoji
     
     // Custom coding keys if needed for compatibility
     enum CodingKeys: String, CodingKey {
@@ -32,5 +33,6 @@ struct UserModel: Codable, Identifiable, Equatable {
         case dailyXP
         case dailyGoal
         case createdAt
+        case avatar
     }
 }
