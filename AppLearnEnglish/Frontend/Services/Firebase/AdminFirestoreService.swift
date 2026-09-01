@@ -87,19 +87,33 @@ class AdminFirestoreService {
     
     func saveWord(word: VocabularyWord) async throws {
         let docRef = db.collection("vocabulary").document(word.id)
+        
+        // Check if there was an existing word with a different topicId
+        var oldTopicId: String? = nil
+        if let existingDoc = try? await docRef.getDocument(), existingDoc.exists {
+            oldTopicId = existingDoc.data()?["topicId"] as? String
+        }
+        
         try docRef.setData(from: word, merge: true)
         
-        // Update the totalWords count on the topic document
-        let topicId = word.topicId
-        let wordsInTopicSnapshot = try await db.collection("vocabulary")
-            .whereField("topicId", isEqualTo: topicId)
+        // Update the new topic's totalWords count
+        let newTopicId = word.topicId
+        let newCountSnapshot = try await db.collection("vocabulary")
+            .whereField("topicId", isEqualTo: newTopicId)
             .getDocuments()
-        
-        let totalCount = wordsInTopicSnapshot.documents.count
-        
-        try await db.collection("topics").document(topicId).updateData([
-            "totalWords": totalCount
+        try await db.collection("topics").document(newTopicId).updateData([
+            "totalWords": newCountSnapshot.documents.count
         ])
+        
+        // If the topic was changed, update the old topic's totalWords count too
+        if let oldId = oldTopicId, oldId != newTopicId {
+            let oldCountSnapshot = try await db.collection("vocabulary")
+                .whereField("topicId", isEqualTo: oldId)
+                .getDocuments()
+            try await db.collection("topics").document(oldId).updateData([
+                "totalWords": oldCountSnapshot.documents.count
+            ])
+        }
     }
     
     func deleteWord(wordId: String, topicId: String) async throws {
