@@ -15,7 +15,10 @@ protocol AdminRepositoryProtocol {
     func deleteWord(wordId: String, topicId: String) async throws
     func getAllQuizzes() async throws -> [Quiz]
     func saveQuiz(quiz: Quiz) async throws
-    func deleteQuiz(quizId: String) async throws
+    func deleteQuiz(quizId: String, topicId: String?) async throws
+    func getAllListeningExercises() async throws -> [ListeningExercise]
+    func saveListeningExercise(exercise: ListeningExercise) async throws
+    func deleteListeningExercise(exerciseId: String, topicId: String?) async throws
 }
 
 class AdminRepository: AdminRepositoryProtocol {
@@ -57,7 +60,19 @@ class AdminRepository: AdminRepositoryProtocol {
         try await adminFirestore.saveQuiz(quiz: quiz)
     }
     
-    func deleteQuiz(quizId: String) async throws {
-        try await adminFirestore.deleteQuiz(quizId: quizId)
+    func deleteQuiz(quizId: String, topicId: String? = nil) async throws {
+        try await adminFirestore.deleteQuiz(quizId: quizId, topicId: topicId)
+    }
+    
+    func getAllListeningExercises() async throws -> [ListeningExercise] {
+        try await adminFirestore.fetchAllListeningExercises()
+    }
+    
+    func saveListeningExercise(exercise: ListeningExercise) async throws {
+        try await adminFirestore.saveListeningExercise(exercise: exercise)
+    }
+    
+    func deleteListeningExercise(exerciseId: String, topicId: String? = nil) async throws {
+        try await adminFirestore.deleteListeningExercise(exerciseId: exerciseId, topicId: topicId)
     }
 }

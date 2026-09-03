@@ -35,6 +35,7 @@ class AdminViewModel: ObservableObject {
     @Published var topics: [Topic] = []
     @Published var words: [VocabularyWord] = []
     @Published var quizzes: [Quiz] = []
+    @Published var listeningExercises: [ListeningExercise] = []
     
     @Published var isLoading = false
     @Published var errorMessage: String? = nil
@@ -46,6 +47,15 @@ class AdminViewModel: ObservableObject {
     @Published var wordSearchText = ""
     @Published var selectedLevelFilter = "All" // "All", "Beginner", "Intermediate", "Advanced"
     @Published var selectedWordSort = "A-Z" // "A-Z", "Z-A", "Newest", "Oldest"
+    
+    // Quizzes filter states
+    @Published var quizSearchText = ""
+    @Published var selectedQuizTopicFilter = "All"
+    
+    // Listening filter states
+    @Published var listeningSearchText = ""
+    @Published var selectedListeningTopicFilter = "All"
+    @Published var selectedListeningLevelFilter = "All"
     
     // Import wizard states
     @Published var parsedImportRecords: [ImportRecord] = []
@@ -114,6 +124,41 @@ class AdminViewModel: ObservableObject {
         return result
     }
     
+    var filteredQuizzes: [Quiz] {
+        var result = quizzes
+        let searchTrimmed = quizSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !searchTrimmed.isEmpty {
+            let searchLower = searchTrimmed.lowercased()
+            result = result.filter {
+                $0.question.lowercased().contains(searchLower) ||
+                $0.correctAnswer.lowercased().contains(searchLower)
+            }
+        }
+        if selectedQuizTopicFilter != "All" {
+            result = result.filter { $0.topicId == selectedQuizTopicFilter }
+        }
+        return result
+    }
+    
+    var filteredListeningExercises: [ListeningExercise] {
+        var result = listeningExercises
+        let searchTrimmed = listeningSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !searchTrimmed.isEmpty {
+            let searchLower = searchTrimmed.lowercased()
+            result = result.filter {
+                $0.sentence.lowercased().contains(searchLower) ||
+                $0.translation.lowercased().contains(searchLower)
+            }
+        }
+        if selectedListeningTopicFilter != "All" {
+            result = result.filter { $0.topicId == selectedListeningTopicFilter }
+        }
+        if selectedListeningLevelFilter != "All" {
+            result = result.filter { $0.level.lowercased() == selectedListeningLevelFilter.lowercased() }
+        }
+        return result
+    }
+    
     // MARK: - Load All Admin Data
     func loadAllData() async {
         self.isLoading = true
@@ -141,7 +186,14 @@ class AdminViewModel: ObservableObject {
             print("Admin: Failed to load quizzes: \(error.localizedDescription)")
         }
         
-        // 4. Load Users (Requires Admin permissions on collection users)
+        // 4. Load Listening Exercises
+        do {
+            self.listeningExercises = try await repository.getAllListeningExercises()
+        } catch {
+            print("Admin: Failed to load listening exercises: \(error.localizedDescription)")
+        }
+        
+        // 5. Load Users (Requires Admin permissions on collection users)
         do {
             self.users = try await repository.getAllUsers()
         } catch {
@@ -473,7 +525,7 @@ class AdminViewModel: ObservableObject {
     }
     
     // MARK: - Quiz Operations
-    func saveQuiz(id: String?, question: String, answers: [String], correctAnswer: String, topicId: String, type: String) async {
+    func saveQuiz(id: String?, question: String, answers: [String], correctAnswer: String, topicId: String, type: String = "multiple_choice", level: String = "Beginner") async {
         let quizId = id ?? "quiz_\(UUID().uuidString.prefix(8).lowercased())"
         let newQuiz = Quiz(
             id: quizId,
@@ -482,6 +534,7 @@ class AdminViewModel: ObservableObject {
             answers: answers,
             correctAnswer: correctAnswer,
             type: type,
+            level: level,
             audioUrl: nil
         )
         
@@ -497,10 +550,44 @@ class AdminViewModel: ObservableObject {
         }
     }
     
-    func deleteQuiz(quizId: String) async {
+    func deleteQuiz(quizId: String, topicId: String? = nil) async {
         do {
-            try await repository.deleteQuiz(quizId: quizId)
+            try await repository.deleteQuiz(quizId: quizId, topicId: topicId)
             quizzes.removeAll(where: { $0.id == quizId })
+        } catch {
+            self.errorMessage = error.localizedDescription
+        }
+    }
+    
+    // MARK: - Listening Exercises Operations
+    func saveListeningExercise(id: String?, sentence: String, translation: String, topicId: String, level: String = "Beginner", audioUrl: String? = nil, hint: String? = nil) async {
+        let exerciseId = id ?? "listen_\(UUID().uuidString.prefix(8).lowercased())"
+        let newExercise = ListeningExercise(
+            id: exerciseId,
+            sentence: sentence,
+            translation: translation,
+            topicId: topicId,
+            level: level,
+            audioUrl: audioUrl,
+            hint: hint
+        )
+        
+        do {
+            try await repository.saveListeningExercise(exercise: newExercise)
+            if let idx = listeningExercises.firstIndex(where: { $0.id == exerciseId }) {
+                listeningExercises[idx] = newExercise
+            } else {
+                listeningExercises.append(newExercise)
+            }
+        } catch {
+            self.errorMessage = error.localizedDescription
+        }
+    }
+    
+    func deleteListeningExercise(exerciseId: String, topicId: String? = nil) async {
+        do {
+            try await repository.deleteListeningExercise(exerciseId: exerciseId, topicId: topicId)
+            listeningExercises.removeAll(where: { $0.id == exerciseId })
         } catch {
             self.errorMessage = error.localizedDescription
         }

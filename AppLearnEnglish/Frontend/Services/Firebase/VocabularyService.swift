@@ -107,23 +107,15 @@ class VocabularyService {
             .collection("learned_words")
             .document(wordId)
         
-        let batch = db.batch()
-        
         // Write to learned_words subcollection
-        batch.setData([
+        try await learnedDocRef.setData([
             "wordId": wordId,
             "status": "learned",
             "learnedAt": FieldValue.serverTimestamp()
-        ], forDocument: learnedDocRef)
+        ])
         
-        // Increment user's XP and update streak in their profile
-        let userDocRef = db.collection("users").document(userId)
-        batch.updateData([
-            "xp": FieldValue.increment(Int64(10)), // Learn a word = 10 XP
-            "streak": FieldValue.increment(Int64(1)) // Simple increment or logic
-        ], forDocument: userDocRef)
-        
-        try await batch.commit()
+        // Dynamically update user's XP (+10) and streak in their profile
+        try await UserService.shared.updateProgressAndStreak(uid: userId, xp: 10)
     }
     
     // MARK: - Toggle Favorite status
