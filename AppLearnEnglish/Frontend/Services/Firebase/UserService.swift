@@ -110,4 +110,10 @@ class UserService {
             "lastStudyDate": Timestamp(date: today)
         ])
     }
+    
+    // MARK: - Update FCM Token for Push Notifications
+    func updateFCMToken(uid: String, token: String) async throws {
+        let docRef = db.collection("users").document(uid)
+        try await docRef.setData(["fcmToken": token], merge: true)
+    }
 }

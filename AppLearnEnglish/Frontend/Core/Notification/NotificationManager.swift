@@ -215,7 +215,9 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let userInfo = response.notification.request.content.userInfo
+        print("📩 [NotificationManager] Người dùng mở thông báo. Payload: \(userInfo)")
         
+        // 1. Handle Local Word payload
         if let wordId = userInfo["wordId"] as? String,
            let word = userInfo["word"] as? String,
            let phonetic = userInfo["phonetic"] as? String,
@@ -231,12 +233,23 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
                 "level": userInfo["level"] as? String ?? "Beginner"
             ]
             
-            // Post notification locally to be picked up by the SwiftUI app views
             DispatchQueue.main.async {
                 NotificationCenter.default.post(
                     name: NSNotification.Name("AddWordFromNotification"),
                     object: nil,
                     userInfo: ["word": wordDict]
+                )
+            }
+        }
+        
+        // 2. Handle Remote FCM Deep Linking Payloads (screen, destination, topicId, etc.)
+        if let targetScreen = (userInfo["screen"] as? String) ?? (userInfo["destination"] as? String) {
+            print("🚀 [NotificationManager] Điều hướng tới màn hình: \(targetScreen)")
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("FCMNavigateToScreen"),
+                    object: nil,
+                    userInfo: ["screen": targetScreen, "data": userInfo]
                 )
             }
         }
@@ -249,6 +262,8 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        completionHandler([.banner, .sound])
+        let userInfo = notification.request.content.userInfo
+        print("🔔 [NotificationManager] Nhận thông báo khi app đang ở foreground: \(userInfo)")
+        completionHandler([.banner, .sound, .badge])
     }
 }

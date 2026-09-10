@@ -27,6 +27,8 @@ class AdminFirestoreService {
             let dailyXP = data["dailyXP"] as? Int ?? 0
             let dailyGoal = data["dailyGoal"] as? Int ?? 20
             let avatar = data["avatar"] as? String
+            let fcmToken = data["fcmToken"] as? String
+            let isActive = data["isActive"] as? Bool ?? true
             
             let timestamp = data["createdAt"] as? Timestamp
             let createdAt = timestamp?.dateValue() ?? Date()
@@ -42,16 +44,78 @@ class AdminFirestoreService {
                 dailyXP: dailyXP,
                 dailyGoal: dailyGoal,
                 createdAt: createdAt,
-                avatar: avatar
+                avatar: avatar,
+                fcmToken: fcmToken,
+                isActive: isActive
             )
         }
+    }
+    
+    func saveUser(user: UserModel) async throws {
+        let docRef = db.collection("users").document(user.uid)
+        var dict: [String: Any] = [
+            "uid": user.uid,
+            "name": user.name,
+            "email": user.email,
+            "role": user.role,
+            "streak": user.streak,
+            "level": user.level,
+            "xp": user.xp,
+            "dailyGoal": user.dailyGoal,
+            "isActive": user.isAccountActive,
+            "updatedAt": FieldValue.serverTimestamp()
+        ]
+        if let dailyXP = user.dailyXP {
+            dict["dailyXP"] = dailyXP
+        }
+        if let avatar = user.avatar, !avatar.isEmpty {
+            dict["avatar"] = avatar
+        }
+        if let fcmToken = user.fcmToken, !fcmToken.isEmpty {
+            dict["fcmToken"] = fcmToken
+        }
+        try await docRef.setData(dict, merge: true)
+    }
+    
+    func createUser(user: UserModel) async throws {
+        let docRef = db.collection("users").document(user.uid)
+        var dict: [String: Any] = [
+            "uid": user.uid,
+            "name": user.name,
+            "email": user.email,
+            "role": user.role,
+            "streak": user.streak,
+            "level": user.level,
+            "xp": user.xp,
+            "dailyXP": user.dailyXP ?? 0,
+            "dailyGoal": user.dailyGoal,
+            "isActive": user.isAccountActive,
+            "createdAt": FieldValue.serverTimestamp()
+        ]
+        if let avatar = user.avatar, !avatar.isEmpty {
+            dict["avatar"] = avatar
+        }
+        try await docRef.setData(dict)
+    }
+    
+    func deleteUser(uid: String) async throws {
+        try await db.collection("users").document(uid).delete()
+    }
+    
+    func toggleUserActiveStatus(uid: String, isActive: Bool) async throws {
+        let docRef = db.collection("users").document(uid)
+        try await docRef.updateData([
+            "isActive": isActive,
+            "updatedAt": FieldValue.serverTimestamp()
+        ])
     }
     
     func updateUserXPAndLevel(uid: String, xp: Int, level: String) async throws {
         let docRef = db.collection("users").document(uid)
         try await docRef.updateData([
             "xp": xp,
-            "level": level
+            "level": level,
+            "updatedAt": FieldValue.serverTimestamp()
         ])
     }
     
@@ -134,6 +198,7 @@ class AdminFirestoreService {
     // MARK: - Quiz Management (/quizzes/{topicId}/questions/{quizId})
     func fetchAllQuizzes() async throws -> [Quiz] {
         var allQuizzes: [Quiz] = []
+        var foundDocIds = Set<String>()
         
         do {
             let topicDocs = try await db.collection("quizzes").getDocuments()
@@ -145,7 +210,10 @@ class AdminFirestoreService {
                           let answers = data["answers"] as? [String],
                           let correctAnswer = data["correctAnswer"] as? String else {
                         if let q = try? doc.data(as: Quiz.self) {
-                            allQuizzes.append(q)
+                            if !foundDocIds.contains(q.id) {
+                                foundDocIds.insert(q.id)
+                                allQuizzes.append(q)
+                            }
                         }
                         continue
                     }
@@ -154,19 +222,31 @@ class AdminFirestoreService {
                     let type = data["type"] as? String ?? "multiple_choice"
                     let level = data["level"] as? String ?? "Beginner"
                     let audioUrl = data["audioUrl"] as? String
-                    allQuizzes.append(Quiz(id: id, topicId: topicId, question: question, answers: answers, correctAnswer: correctAnswer, type: type, level: level, audioUrl: audioUrl))
+                    
+                    if !foundDocIds.contains(id) {
+                        foundDocIds.insert(id)
+                        allQuizzes.append(Quiz(id: id, topicId: topicId, question: question, answers: answers, correctAnswer: correctAnswer, type: type, level: level, audioUrl: audioUrl))
+                    }
+                }
+                
+                // Also check if tDoc is a legacy flat quiz itself
+                let tData = tDoc.data()
+                if let q = tData["question"] as? String,
+                   let ans = tData["answers"] as? [String],
+                   let correct = tData["correctAnswer"] as? String {
+                    let id = tDoc.documentID
+                    if !foundDocIds.contains(id) {
+                        foundDocIds.insert(id)
+                        let topicId = tData["topicId"] as? String ?? "general"
+                        let type = tData["type"] as? String ?? "multiple_choice"
+                        let level = tData["level"] as? String ?? "Beginner"
+                        let audioUrl = tData["audioUrl"] as? String
+                        allQuizzes.append(Quiz(id: id, topicId: topicId, question: q, answers: ans, correctAnswer: correct, type: type, level: level, audioUrl: audioUrl))
+                    }
                 }
             }
         } catch {
-            print("Error fetching hierarchical quizzes: \(error)")
-        }
-        
-        // Fallback: If no hierarchical docs were found, try legacy flat query
-        if allQuizzes.isEmpty {
-            let snapshot = try await db.collection("quizzes").getDocuments()
-            allQuizzes = snapshot.documents.compactMap { doc in
-                try? doc.data(as: Quiz.self)
-            }
+            print("Error fetching quizzes: \(error)")
         }
         
         return allQuizzes
@@ -201,9 +281,48 @@ class AdminFirestoreService {
         
         // 3. Update question counter in /quizzes/{topicId}
         let countSnapshot = try await topicDocRef.collection("questions").getDocuments()
-        try await topicDocRef.updateData([
+        try await topicDocRef.setData([
             "totalQuestions": countSnapshot.documents.count
-        ])
+        ], merge: true)
+    }
+    
+    func saveQuizzesBatch(quizzes: [Quiz], topicId: String) async throws {
+        guard !quizzes.isEmpty else { return }
+        let resolvedTopicId = topicId.isEmpty ? "general" : topicId
+        let topicDocRef = db.collection("quizzes").document(resolvedTopicId)
+        
+        // 1. Ensure Topic Document exists
+        try await topicDocRef.setData([
+            "id": resolvedTopicId,
+            "topicId": resolvedTopicId,
+            "updatedAt": FieldValue.serverTimestamp()
+        ], merge: true)
+        
+        // 2. Batch write all questions
+        let batch = db.batch()
+        for quiz in quizzes {
+            let qRef = topicDocRef.collection("questions").document(quiz.id)
+            var dict: [String: Any] = [
+                "id": quiz.id,
+                "topicId": resolvedTopicId,
+                "question": quiz.question,
+                "answers": quiz.answers,
+                "correctAnswer": quiz.correctAnswer,
+                "type": quiz.type,
+                "level": quiz.level ?? "Beginner"
+            ]
+            if let audio = quiz.audioUrl, !audio.isEmpty {
+                dict["audioUrl"] = audio
+            }
+            batch.setData(dict, forDocument: qRef, merge: true)
+        }
+        try await batch.commit()
+        
+        // 3. Update question counter
+        let countSnapshot = try await topicDocRef.collection("questions").getDocuments()
+        try await topicDocRef.setData([
+            "totalQuestions": countSnapshot.documents.count
+        ], merge: true)
     }
     
     func deleteQuiz(quizId: String, topicId: String? = nil) async throws {
@@ -212,9 +331,9 @@ class AdminFirestoreService {
             try await topicDocRef.collection("questions").document(quizId).delete()
             
             let countSnapshot = try await topicDocRef.collection("questions").getDocuments()
-            try await topicDocRef.updateData([
+            try await topicDocRef.setData([
                 "totalQuestions": countSnapshot.documents.count
-            ])
+            ], merge: true)
         } else {
             let topicDocs = try await db.collection("quizzes").getDocuments()
             for tDoc in topicDocs.documents {
@@ -229,6 +348,7 @@ class AdminFirestoreService {
     // MARK: - Listening Exercises Management (/listening_exercises/{topicId}/sentences/{exerciseId})
     func fetchAllListeningExercises() async throws -> [ListeningExercise] {
         var allExercises: [ListeningExercise] = []
+        var foundDocIds = Set<String>()
         
         do {
             let topicDocs = try await db.collection("listening_exercises").getDocuments()
@@ -239,7 +359,10 @@ class AdminFirestoreService {
                     guard let sentence = data["sentence"] as? String,
                           let translation = data["translation"] as? String else {
                         if let ex = try? doc.data(as: ListeningExercise.self) {
-                            allExercises.append(ex)
+                            if !foundDocIds.contains(ex.id) {
+                                foundDocIds.insert(ex.id)
+                                allExercises.append(ex)
+                            }
                         }
                         continue
                     }
@@ -248,18 +371,30 @@ class AdminFirestoreService {
                     let level = data["level"] as? String ?? "Beginner"
                     let audioUrl = data["audioUrl"] as? String
                     let hint = data["hint"] as? String
-                    allExercises.append(ListeningExercise(id: id, sentence: sentence, translation: translation, topicId: topicId, level: level, audioUrl: audioUrl, hint: hint))
+                    
+                    if !foundDocIds.contains(id) {
+                        foundDocIds.insert(id)
+                        allExercises.append(ListeningExercise(id: id, sentence: sentence, translation: translation, topicId: topicId, level: level, audioUrl: audioUrl, hint: hint))
+                    }
+                }
+                
+                // Also check if tDoc is a legacy flat listening exercise
+                let tData = tDoc.data()
+                if let s = tData["sentence"] as? String,
+                   let tr = tData["translation"] as? String {
+                    let id = tDoc.documentID
+                    if !foundDocIds.contains(id) {
+                        foundDocIds.insert(id)
+                        let topicId = tData["topicId"] as? String ?? "general"
+                        let level = tData["level"] as? String ?? "Beginner"
+                        let audioUrl = tData["audioUrl"] as? String
+                        let hint = tData["hint"] as? String
+                        allExercises.append(ListeningExercise(id: id, sentence: s, translation: tr, topicId: topicId, level: level, audioUrl: audioUrl, hint: hint))
+                    }
                 }
             }
         } catch {
-            print("Error fetching hierarchical listening exercises: \(error)")
-        }
-        
-        if allExercises.isEmpty {
-            let snapshot = try await db.collection("listening_exercises").getDocuments()
-            allExercises = snapshot.documents.compactMap { doc in
-                try? doc.data(as: ListeningExercise.self)
-            }
+            print("Error fetching listening exercises: \(error)")
         }
         
         return allExercises
@@ -295,9 +430,49 @@ class AdminFirestoreService {
         
         // 3. Update total sentences count
         let countSnapshot = try await topicDocRef.collection("sentences").getDocuments()
-        try await topicDocRef.updateData([
+        try await topicDocRef.setData([
             "totalSentences": countSnapshot.documents.count
-        ])
+        ], merge: true)
+    }
+    
+    func saveListeningExercisesBatch(exercises: [ListeningExercise], topicId: String) async throws {
+        guard !exercises.isEmpty else { return }
+        let resolvedTopicId = topicId.isEmpty ? "general" : topicId
+        let topicDocRef = db.collection("listening_exercises").document(resolvedTopicId)
+        
+        // 1. Ensure Topic Document exists
+        try await topicDocRef.setData([
+            "id": resolvedTopicId,
+            "topicId": resolvedTopicId,
+            "updatedAt": FieldValue.serverTimestamp()
+        ], merge: true)
+        
+        // 2. Batch write all sentences
+        let batch = db.batch()
+        for ex in exercises {
+            let sRef = topicDocRef.collection("sentences").document(ex.id)
+            var dict: [String: Any] = [
+                "id": ex.id,
+                "topicId": resolvedTopicId,
+                "sentence": ex.sentence,
+                "translation": ex.translation,
+                "level": ex.level
+            ]
+            if let hint = ex.hint, !hint.isEmpty {
+                dict["hint"] = hint
+            }
+            if let audio = ex.audioUrl, !audio.isEmpty {
+                dict["audioUrl"] = audio
+            }
+            batch.setData(dict, forDocument: sRef, merge: true)
+        }
+        try await batch.commit()
+        
+        // 3. Update count
+        let countSnapshot = try await topicDocRef.collection("sentences").getDocuments()
+        try await topicDocRef.setData([
+            "totalSentences": countSnapshot.documents.count
+        ], merge: true)
     }
     
     func deleteListeningExercise(exerciseId: String, topicId: String? = nil) async throws {
@@ -306,9 +481,9 @@ class AdminFirestoreService {
             try await topicDocRef.collection("sentences").document(exerciseId).delete()
             
             let countSnapshot = try await topicDocRef.collection("sentences").getDocuments()
-            try await topicDocRef.updateData([
+            try await topicDocRef.setData([
                 "totalSentences": countSnapshot.documents.count
-            ])
+            ], merge: true)
         } else {
             let topicDocs = try await db.collection("listening_exercises").getDocuments()
             for tDoc in topicDocs.documents {

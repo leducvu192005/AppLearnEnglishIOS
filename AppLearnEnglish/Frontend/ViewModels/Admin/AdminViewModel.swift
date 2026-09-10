@@ -57,6 +57,12 @@ class AdminViewModel: ObservableObject {
     @Published var selectedListeningTopicFilter = "All"
     @Published var selectedListeningLevelFilter = "All"
     
+    // Users filter states
+    @Published var userSearchText = ""
+    @Published var selectedUserRoleFilter = "All" // "All", "user", "admin"
+    @Published var selectedUserStatusFilter = "All" // "All", "Active", "Suspended"
+    @Published var selectedUserSort = "Name A-Z" // "Name A-Z", "Name Z-A", "Most XP", "Least XP", "Newest"
+    
     // Import wizard states
     @Published var parsedImportRecords: [ImportRecord] = []
     @Published var importStats = (validCount: 0, duplicateCount: 0, invalidCount: 0)
@@ -159,6 +165,49 @@ class AdminViewModel: ObservableObject {
         return result
     }
     
+    var filteredUsers: [UserModel] {
+        var result = users
+        
+        let searchTrimmed = userSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !searchTrimmed.isEmpty {
+            let searchLower = searchTrimmed.lowercased()
+            result = result.filter {
+                $0.name.lowercased().contains(searchLower) ||
+                $0.email.lowercased().contains(searchLower) ||
+                $0.uid.lowercased().contains(searchLower)
+            }
+        }
+        
+        if selectedUserRoleFilter != "All" {
+            result = result.filter { $0.role.lowercased() == selectedUserRoleFilter.lowercased() }
+        }
+        
+        if selectedUserStatusFilter != "All" {
+            if selectedUserStatusFilter == "Active" {
+                result = result.filter { $0.isAccountActive }
+            } else if selectedUserStatusFilter == "Suspended" {
+                result = result.filter { !$0.isAccountActive }
+            }
+        }
+        
+        result.sort { (u1, u2) -> Bool in
+            switch selectedUserSort {
+            case "Name Z-A":
+                return u1.name.localizedCompare(u2.name) == .orderedDescending
+            case "Most XP":
+                return u1.xp > u2.xp
+            case "Least XP":
+                return u1.xp < u2.xp
+            case "Newest":
+                return u1.createdAt > u2.createdAt
+            default: // "Name A-Z"
+                return u1.name.localizedCompare(u2.name) == .orderedAscending
+            }
+        }
+        
+        return result
+    }
+    
     // MARK: - Load All Admin Data
     func loadAllData() async {
         self.isLoading = true
@@ -208,6 +257,66 @@ class AdminViewModel: ObservableObject {
     }
     
     // MARK: - User Operations
+    func saveUser(user: UserModel) async {
+        do {
+            try await repository.saveUser(user: user)
+            if let idx = users.firstIndex(where: { $0.uid == user.uid }) {
+                users[idx] = user
+            } else {
+                users.append(user)
+            }
+        } catch {
+            self.errorMessage = error.localizedDescription
+        }
+    }
+    
+    func createUser(name: String, email: String, role: String, level: String, xp: Int, streak: Int, dailyGoal: Int, avatar: String?, isActive: Bool) async {
+        let newUid = "user_\(UUID().uuidString.prefix(12).lowercased())"
+        let newUser = UserModel(
+            uid: newUid,
+            name: name,
+            email: email,
+            role: role,
+            streak: streak,
+            level: level,
+            xp: xp,
+            dailyXP: 0,
+            dailyGoal: dailyGoal,
+            createdAt: Date(),
+            avatar: avatar,
+            isActive: isActive
+        )
+        
+        do {
+            try await repository.createUser(user: newUser)
+            users.insert(newUser, at: 0)
+        } catch {
+            self.errorMessage = error.localizedDescription
+        }
+    }
+    
+    func deleteUser(uid: String) async {
+        do {
+            try await repository.deleteUser(uid: uid)
+            users.removeAll(where: { $0.uid == uid })
+        } catch {
+            self.errorMessage = error.localizedDescription
+        }
+    }
+    
+    func toggleUserActiveStatus(user: UserModel) async {
+        let currentStatus = user.isAccountActive
+        let newStatus = !currentStatus
+        do {
+            try await repository.toggleUserActiveStatus(uid: user.uid, isActive: newStatus)
+            if let idx = users.firstIndex(where: { $0.uid == user.uid }) {
+                users[idx].isActive = newStatus
+            }
+        } catch {
+            self.errorMessage = error.localizedDescription
+        }
+    }
+    
     func updateUserXPAndLevel(uid: String, xp: Int, level: String) async {
         do {
             try await repository.updateUserXPAndLevel(uid: uid, xp: xp, level: level)
@@ -525,7 +634,7 @@ class AdminViewModel: ObservableObject {
     }
     
     // MARK: - Quiz Operations
-    func saveQuiz(id: String?, question: String, answers: [String], correctAnswer: String, topicId: String, type: String = "multiple_choice", level: String = "Beginner") async {
+    func saveQuiz(id: String?, question: String, answers: [String], correctAnswer: String, topicId: String, type: String = "multiple_choice", level: String = "Beginner", audioUrl: String? = nil, imageUrl: String? = nil) async {
         let quizId = id ?? "quiz_\(UUID().uuidString.prefix(8).lowercased())"
         let newQuiz = Quiz(
             id: quizId,
@@ -535,7 +644,8 @@ class AdminViewModel: ObservableObject {
             correctAnswer: correctAnswer,
             type: type,
             level: level,
-            audioUrl: nil
+            audioUrl: audioUrl,
+            imageUrl: imageUrl
         )
         
         do {
@@ -548,6 +658,24 @@ class AdminViewModel: ObservableObject {
         } catch {
             self.errorMessage = error.localizedDescription
         }
+    }
+    
+    func saveQuizzesBatch(quizzes newQuizzes: [Quiz], topicId: String) async {
+        guard !newQuizzes.isEmpty else { return }
+        self.isLoading = true
+        do {
+            try await repository.saveQuizzesBatch(quizzes: newQuizzes, topicId: topicId)
+            for q in newQuizzes {
+                if let idx = quizzes.firstIndex(where: { $0.id == q.id }) {
+                    quizzes[idx] = q
+                } else {
+                    quizzes.append(q)
+                }
+            }
+        } catch {
+            self.errorMessage = error.localizedDescription
+        }
+        self.isLoading = false
     }
     
     func deleteQuiz(quizId: String, topicId: String? = nil) async {
@@ -582,6 +710,24 @@ class AdminViewModel: ObservableObject {
         } catch {
             self.errorMessage = error.localizedDescription
         }
+    }
+    
+    func saveListeningExercisesBatch(exercises newExercises: [ListeningExercise], topicId: String) async {
+        guard !newExercises.isEmpty else { return }
+        self.isLoading = true
+        do {
+            try await repository.saveListeningExercisesBatch(exercises: newExercises, topicId: topicId)
+            for ex in newExercises {
+                if let idx = listeningExercises.firstIndex(where: { $0.id == ex.id }) {
+                    listeningExercises[idx] = ex
+                } else {
+                    listeningExercises.append(ex)
+                }
+            }
+        } catch {
+            self.errorMessage = error.localizedDescription
+        }
+        self.isLoading = false
     }
     
     func deleteListeningExercise(exerciseId: String, topicId: String? = nil) async {

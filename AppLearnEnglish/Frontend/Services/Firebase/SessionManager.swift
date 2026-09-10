@@ -58,12 +58,27 @@ class SessionManager: ObservableObject {
                     // Try fetching user from Firestore
                     let userModel = try await self.userService.fetchUser(uid: authenticatedUser.uid)
                     
+                    if !userModel.isAccountActive && userModel.role != "admin" {
+                        await MainActor.run {
+                            self.currentUserModel = nil
+                            self.isLoggedIn = false
+                            self.userRole = nil
+                            self.isLoading = false
+                            self.errorMessage = "Tài khoản của bạn đã bị tạm dừng hoạt động. Vui lòng liên hệ ban quản trị để được hỗ trợ."
+                        }
+                        try? Auth.auth().signOut()
+                        return
+                    }
+                    
                     await MainActor.run {
                         self.currentUserModel = userModel
                         self.isLoggedIn = true
                         self.userRole = userModel.role
                         self.isLoading = false
                     }
+                    
+                    // Sync FCM Token to Firestore
+                    FCMService.shared.syncCurrentTokenToFirestore()
                 } catch {
                     print("Error loading user profile: \(error.localizedDescription)")
                     
@@ -86,6 +101,9 @@ class SessionManager: ObservableObject {
                         self.userRole = "user"
                         self.isLoading = false
                     }
+                    
+                    // Sync FCM Token to Firestore
+                    FCMService.shared.syncCurrentTokenToFirestore()
                 }
             }
         }
@@ -97,6 +115,14 @@ class SessionManager: ObservableObject {
         guard let uid = currentUserModel?.uid else { return }
         do {
             let userModel = try await self.userService.fetchUser(uid: uid)
+            if !userModel.isAccountActive && userModel.role != "admin" {
+                self.currentUserModel = nil
+                self.isLoggedIn = false
+                self.userRole = nil
+                self.errorMessage = "Tài khoản của bạn đã bị tạm dừng hoạt động. Vui lòng liên hệ ban quản trị để được hỗ trợ."
+                try? Auth.auth().signOut()
+                return
+            }
             self.currentUserModel = userModel
             self.isLoggedIn = true
             self.userRole = userModel.role
