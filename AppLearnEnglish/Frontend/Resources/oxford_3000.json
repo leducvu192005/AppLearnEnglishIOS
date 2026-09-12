@@ -1,0 +1,272 @@
+[
+  {
+    "id": "ox1",
+    "word": "abandon",
+    "phonetic": "/əˈbændən/",
+    "meaning": "từ bỏ, ruồng bỏ",
+    "example": "The family had to abandon their home due to the flood.",
+    "topicId": "dailylife",
+    "level": "Intermediate"
+  },
+  {
+    "id": "ox2",
+    "word": "ability",
+    "phonetic": "/əˈbɪləti/",
+    "meaning": "khả năng, năng lực",
+    "example": "She has a remarkable ability to remember faces.",
+    "topicId": "dailylife",
+    "level": "Beginner"
+  },
+  {
+    "id": "ox3",
+    "word": "abroad",
+    "phonetic": "/əˈbrɔːd/",
+    "meaning": "nước ngoài, ra nước ngoài",
+    "example": "He decided to study abroad to improve his English.",
+    "topicId": "travel",
+    "level": "Beginner"
+  },
+  {
+    "id": "ox4",
+    "word": "absolute",
+    "phonetic": "/ˈæbsəluːt/",
+    "meaning": "tuyệt đối, hoàn toàn",
+    "example": "You must tell me the absolute truth.",
+    "topicId": "dailylife",
+    "level": "Intermediate"
+  },
+  {
+    "id": "ox5",
+    "word": "academic",
+    "phonetic": "/ˌækəˈdemɪk/",
+    "meaning": "thuộc về học thuật",
+    "example": "The school year is divided into two academic semesters.",
+    "topicId": "business",
+    "level": "Intermediate"
+  },
+  {
+    "id": "ox6",
+    "word": "accent",
+    "phonetic": "/ˈæksent/",
+    "meaning": "giọng, ngữ điệu",
+    "example": "She speaks English with a strong French accent.",
+    "topicId": "dailylife",
+    "level": "Intermediate"
+  },
+  {
+    "id": "ox7",
+    "word": "acceptable",
+    "phonetic": "/əkˈseptəbl/",
+    "meaning": "có thể chấp nhận được",
+    "example": "We need to find an acceptable solution to this problem.",
+    "topicId": "business",
+    "level": "Intermediate"
+  },
+  {
+    "id": "ox8",
+    "word": "accompany",
+    "phonetic": "/əˈkʌmpəni/",
+    "meaning": "đi cùng, đồng hành",
+    "example": "Children must be accompanied by an adult.",
+    "topicId": "travel",
+    "level": "Advanced"
+  },
+  {
+    "id": "ox9",
+    "word": "accurate",
+    "phonetic": "/ˈækjərət/",
+    "meaning": "chính xác, xác đáng",
+    "example": "The weather forecast was surprisingly accurate.",
+    "topicId": "tech",
+    "level": "Intermediate"
+  },
+  {
+    "id": "ox10",
+    "word": "achieve",
+    "phonetic": "/əˈtʃiːv/",
+    "meaning": "đạt được, giành được",
+    "example": "You can achieve anything if you work hard enough.",
+    "topicId": "business",
+    "level": "Intermediate"
+  },
+  {
+    "id": "ox11",
+    "word": "acknowledge",
+    "phonetic": "/əkˈnɒlɪdʒ/",
+    "meaning": "thừa nhận, công nhận",
+    "example": "Please acknowledge receipt of this email.",
+    "topicId": "business",
+    "level": "Advanced"
+  },
+  {
+    "id": "ox12",
+    "word": "acquire",
+    "phonetic": "/əˈkwaɪə/",
+    "meaning": "thu được, đạt được",
+    "example": "She managed to acquire a good command of the language.",
+    "topicId": "dailylife",
+    "level": "Intermediate"
+  },
+  {
+    "id": "ox13",
+    "word": "advertise",
+    "phonetic": "/ˈædvətaɪz/",
+    "meaning": "quảng cáo, thông báo",
+    "example": "They plan to advertise their new product on television.",
+    "topicId": "business",
+    "level": "Beginner"
+  },
+  {
+    "id": "ox14",
+    "word": "advocate",
+    "phonetic": "/ˈædvəkeɪt/",
+    "meaning": "ủng hộ, bào chữa",
+    "example": "He is a strong advocate for human rights.",
+    "topicId": "business",
+    "level": "Advanced"
+  },
+  {
+    "id": "ox15",
+    "word": "affect",
+    "phonetic": "/əˈfekt/",
+    "meaning": "ảnh hưởng, tác động",
+    "example": "The cold weather will affect the crops.",
+    "topicId": "dailylife",
+    "level": "Beginner"
+  },
+  {
+    "id": "ox16",
+    "word": "afford",
+    "phonetic": "/əˈfɔːd/",
+    "meaning": "có đủ khả năng chi trả",
+    "example": "We can't afford to buy a new car right now.",
+    "topicId": "dailylife",
+    "level": "Beginner"
+  },
+  {
+    "id": "ox17",
+    "word": "agency",
+    "phonetic": "/ˈeɪdʒənsi/",
+    "meaning": "đại lý, cơ quan",
+    "example": "She works at a local travel agency.",
+    "topicId": "travel",
+    "level": "Intermediate"
+  },
+  {
+    "id": "ox18",
+    "word": "agenda",
+    "phonetic": "/əˈdʒendə/",
+    "meaning": "chương trình nghị sự, lịch trình",
+    "example": "What is the next item on the meeting agenda?",
+    "topicId": "business",
+    "level": "Intermediate"
+  },
+  {
+    "id": "ox19",
+    "word": "aggressive",
+    "phonetic": "/əˈɡresɪv/",
+    "meaning": "hung hăng, quyết đoán",
+    "example": "A good salesman should be active but not aggressive.",
+    "topicId": "dailylife",
+    "level": "Intermediate"
+  },
+  {
+    "id": "ox20",
+    "word": "alternative",
+    "phonetic": "/ɔːlˈtɜːnətɪv/",
+    "meaning": "sự thay thế, lựa chọn khác",
+    "example": "We have no alternative but to cancel the flight.",
+    "topicId": "travel",
+    "level": "Intermediate"
+  },
+  {
+    "id": "ox21",
+    "word": "ambition",
+    "phonetic": "/æmˈbɪʃn/",
+    "meaning": "hoài bão, khát vọng",
+    "example": "Her lifelong ambition is to become a famous doctor.",
+    "topicId": "dailylife",
+    "level": "Intermediate"
+  },
+  {
+    "id": "ox22",
+    "word": "analyze",
+    "phonetic": "/ˈænəlaɪz/",
+    "meaning": "phân tích",
+    "example": "We need to analyze the test results carefully.",
+    "topicId": "tech",
+    "level": "Intermediate"
+  },
+  {
+    "id": "ox23",
+    "word": "annual",
+    "phonetic": "/ˈænjuəl/",
+    "meaning": "hàng năm, thường niên",
+    "example": "The company holds its annual general meeting in May.",
+    "topicId": "business",
+    "level": "Intermediate"
+  },
+  {
+    "id": "ox24",
+    "word": "apparent",
+    "phonetic": "/əˈpærənt/",
+    "meaning": "rõ ràng, hiển nhiên",
+    "example": "It became apparent that they were lost.",
+    "topicId": "dailylife",
+    "level": "Intermediate"
+  },
+  {
+    "id": "ox25",
+    "word": "approach",
+    "phonetic": "/əˈprəʊtʃ/",
+    "meaning": "tiếp cận, phương pháp",
+    "example": "The train slowed down as it approached the station.",
+    "topicId": "travel",
+    "level": "Intermediate"
+  },
+  {
+    "id": "ox26",
+    "word": "appropriate",
+    "phonetic": "/əˈprəʊpriət/",
+    "meaning": "thích hợp, phù hợp",
+    "example": "Jeans are not appropriate wear for an interview.",
+    "topicId": "business",
+    "level": "Intermediate"
+  },
+  {
+    "id": "ox27",
+    "word": "approve",
+    "phonetic": "/əˈpruːv/",
+    "meaning": "tán thành, chấp thuận",
+    "example": "My parents don't approve of my new lifestyle.",
+    "topicId": "dailylife",
+    "level": "Beginner"
+  },
+  {
+    "id": "ox28",
+    "word": "artificial",
+    "phonetic": "/ˌɑːtɪˈfɪʃl/",
+    "meaning": "nhân tạo",
+    "example": "This juice contains no artificial colors or flavors.",
+    "topicId": "tech",
+    "level": "Intermediate"
+  },
+  {
+    "id": "ox29",
+    "word": "aspect",
+    "phonetic": "/ˈæspekt/",
+    "meaning": "khía cạnh, diện mạo",
+    "example": "Every aspect of the project has been reviewed.",
+    "topicId": "business",
+    "level": "Intermediate"
+  },
+  {
+    "id": "ox30",
+    "word": "assume",
+    "phonetic": "/əˈsjuːm/",
+    "meaning": "giả định, thừa nhận",
+    "example": "Don't assume that he is guilty before checking.",
+    "topicId": "dailylife",
+    "level": "Intermediate"
+  }
+]

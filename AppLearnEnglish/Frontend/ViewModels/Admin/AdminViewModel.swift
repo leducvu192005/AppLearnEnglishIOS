@@ -27,6 +27,15 @@ struct ImportRecord: Identifiable, Hashable {
     let statusReason: String
 }
 
+struct ParsedTopicSet: Identifiable, Hashable {
+    let id: String // topicId slug
+    var name: String
+    var description: String
+    var image: String
+    var isNewTopic: Bool
+    var words: [ImportRecord]
+}
+
 @MainActor
 class AdminViewModel: ObservableObject {
     private let repository: AdminRepositoryProtocol
@@ -64,6 +73,7 @@ class AdminViewModel: ObservableObject {
     @Published var selectedUserSort = "Name A-Z" // "Name A-Z", "Name Z-A", "Most XP", "Least XP", "Newest"
     
     // Import wizard states
+    @Published var parsedTopicSets: [ParsedTopicSet] = []
     @Published var parsedImportRecords: [ImportRecord] = []
     @Published var importStats = (validCount: 0, duplicateCount: 0, invalidCount: 0)
     
@@ -192,15 +202,17 @@ class AdminViewModel: ObservableObject {
         
         result.sort { (u1, u2) -> Bool in
             switch selectedUserSort {
-            case "Name Z-A":
+            case "Name Z–A", "Name Z-A":
                 return u1.name.localizedCompare(u2.name) == .orderedDescending
-            case "Most XP":
+            case "Highest XP", "Most XP":
                 return u1.xp > u2.xp
-            case "Least XP":
+            case "Lowest XP", "Least XP":
                 return u1.xp < u2.xp
             case "Newest":
                 return u1.createdAt > u2.createdAt
-            default: // "Name A-Z"
+            case "Oldest":
+                return u1.createdAt < u2.createdAt
+            default: // "Name A–Z", "Name A-Z"
                 return u1.name.localizedCompare(u2.name) == .orderedAscending
             }
         }
@@ -458,13 +470,124 @@ class AdminViewModel: ObservableObject {
         return result
     }
     
+    func createTopicSlug(from text: String) -> String {
+        let latin = text.folding(options: .diacriticInsensitive, locale: Locale(identifier: "vi_VN"))
+        let lower = latin.lowercased()
+        let allowedChars = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_- "))
+        let filtered = lower.unicodeScalars.filter { allowedChars.contains($0) }
+        let cleaned = String(String.UnicodeScalarView(filtered))
+        let slug = cleaned.replacingOccurrences(of: " ", with: "_").replacingOccurrences(of: "-", with: "_")
+        let finalSlug = slug.components(separatedBy: "_").filter { !$0.isEmpty }.joined(separator: "_")
+        return finalSlug.isEmpty ? "topic_\(UUID().uuidString.prefix(6).lowercased())" : finalSlug
+    }
+    
+    private func addWordToTopic(word: LooseWord, defaultTopicId: String, topicSetsDict: inout [String: ParsedTopicSet]) {
+        let wordVal = word.word?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let meaningVal = word.meaning?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let phoneticVal = word.phonetic?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let exampleVal = word.example?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let imageVal = word.image?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let audioVal = word.audio?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let topicVal = word.topicId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? defaultTopicId
+        let levelVal = word.level?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "Beginner"
+        
+        let targetId = topicVal.isEmpty ? defaultTopicId : topicVal
+        
+        var status: ImportStatus = .valid
+        var reason = "Hợp lệ"
+        
+        if wordVal.isEmpty || meaningVal.isEmpty {
+            status = .invalid
+            reason = "Thiếu từ hoặc nghĩa"
+        } else if words.contains(where: { $0.word.lowercased() == wordVal.lowercased() && $0.topicId == targetId }) ||
+                    (topicSetsDict[targetId]?.words.contains(where: { $0.word.lowercased() == wordVal.lowercased() }) == true) {
+            status = .duplicate
+            reason = "Từ vựng này đã tồn tại trong chủ đề"
+        }
+        
+        let record = ImportRecord(
+            word: wordVal,
+            phonetic: phoneticVal,
+            meaning: meaningVal,
+            example: exampleVal,
+            image: imageVal,
+            audio: audioVal,
+            topicId: targetId,
+            level: levelVal,
+            status: status,
+            statusReason: reason
+        )
+        
+        topicSetsDict[targetId]?.words.append(record)
+    }
+    
+    struct LooseTopicMeta: Decodable {
+        let id: String?
+        let name: String?
+        let description: String?
+        let image: String?
+        let coverImage: String?
+        let topicId: String?
+    }
+    
+    struct LooseDatasetItem: Decodable {
+        let topic: LooseTopicMeta?
+        let id: String?
+        let name: String?
+        let description: String?
+        let image: String?
+        let coverImage: String?
+        let topicId: String?
+        let words: [LooseWord]?
+    }
+    
+    struct LooseWord: Decodable {
+        let word: String?
+        let phonetic: String?
+        let meaning: String?
+        let example: String?
+        let image: String?
+        let audio: String?
+        let topicId: String?
+        let level: String?
+    }
+    
     func parseImportData(text: String, isJSON: Bool, currentTopicId: String) {
-        var records: [ImportRecord] = []
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmedText.isEmpty {
+            self.parsedTopicSets = []
             self.parsedImportRecords = []
             self.importStats = (validCount: 0, duplicateCount: 0, invalidCount: 0)
             return
+        }
+        
+        var topicSetsDict: [String: ParsedTopicSet] = [:]
+        var topicSetsOrder: [String] = []
+        
+        func getOrCreateTopicSet(id: String, name: String, desc: String, image: String) -> String {
+            let finalId = id.isEmpty ? createTopicSlug(from: name.isEmpty ? currentTopicId : name) : id
+            if topicSetsDict[finalId] == nil {
+                let existingTopic = topics.first(where: { $0.id == finalId })
+                let finalName = name.isEmpty ? (existingTopic?.name ?? finalId.replacingOccurrences(of: "_", with: " ").capitalized) : name
+                let finalDesc = desc.isEmpty ? (existingTopic?.description ?? "") : desc
+                let finalImg = image.isEmpty ? (existingTopic?.image ?? "folder") : image
+                let isNew = (existingTopic == nil)
+                
+                topicSetsDict[finalId] = ParsedTopicSet(
+                    id: finalId,
+                    name: finalName,
+                    description: finalDesc,
+                    image: finalImg,
+                    isNewTopic: isNew,
+                    words: []
+                )
+                topicSetsOrder.append(finalId)
+            } else {
+                if !name.isEmpty { topicSetsDict[finalId]?.name = name }
+                if !desc.isEmpty { topicSetsDict[finalId]?.description = desc }
+                if !image.isEmpty { topicSetsDict[finalId]?.image = image }
+            }
+            return finalId
         }
         
         if isJSON {
@@ -473,58 +596,58 @@ class AdminViewModel: ObservableObject {
                 return
             }
             
-            struct LooseWord: Decodable {
-                let word: String?
-                let phonetic: String?
-                let meaning: String?
-                let example: String?
-                let image: String?
-                let audio: String?
-                let topicId: String?
-                let level: String?
+            var parsedSuccessfully = false
+            
+            // 1. Try decoding array of datasets: [{ topic: {...}, words: [...] }] or [{ name: "...", words: [...] }]
+            if let datasets = try? JSONDecoder().decode([LooseDatasetItem].self, from: data),
+               datasets.contains(where: { $0.words != nil }) {
+                parsedSuccessfully = true
+                for item in datasets {
+                    let tId = item.topic?.id ?? item.topic?.topicId ?? item.id ?? item.topicId ?? ""
+                    let tName = item.topic?.name ?? item.name ?? ""
+                    let tDesc = item.topic?.description ?? item.description ?? ""
+                    let tImg = item.topic?.image ?? item.topic?.coverImage ?? item.image ?? item.coverImage ?? ""
+                    
+                    let targetTopicId = getOrCreateTopicSet(id: tId, name: tName, desc: tDesc, image: tImg)
+                    
+                    if let rawWords = item.words {
+                        for w in rawWords {
+                            addWordToTopic(word: w, defaultTopicId: targetTopicId, topicSetsDict: &topicSetsDict)
+                        }
+                    }
+                }
+            }
+            // 2. Try decoding single dataset: { topic: {...}, words: [...] } or { name: "...", words: [...] }
+            else if let singleDataset = try? JSONDecoder().decode(LooseDatasetItem.self, from: data),
+                    singleDataset.words != nil {
+                parsedSuccessfully = true
+                let tId = singleDataset.topic?.id ?? singleDataset.topic?.topicId ?? singleDataset.id ?? singleDataset.topicId ?? ""
+                let tName = singleDataset.topic?.name ?? singleDataset.name ?? ""
+                let tDesc = singleDataset.topic?.description ?? singleDataset.description ?? ""
+                let tImg = singleDataset.topic?.image ?? singleDataset.topic?.coverImage ?? singleDataset.image ?? singleDataset.coverImage ?? ""
+                
+                let targetTopicId = getOrCreateTopicSet(id: tId, name: tName, desc: tDesc, image: tImg)
+                
+                if let rawWords = singleDataset.words {
+                    for w in rawWords {
+                        addWordToTopic(word: w, defaultTopicId: targetTopicId, topicSetsDict: &topicSetsDict)
+                    }
+                }
+            }
+            // 3. Try decoding plain list of words: [{ word: "...", meaning: "..." }]
+            else if let rawWords = try? JSONDecoder().decode([LooseWord].self, from: data) {
+                parsedSuccessfully = true
+                let targetTopicId = getOrCreateTopicSet(id: currentTopicId, name: "", desc: "", image: "")
+                for w in rawWords {
+                    let wordTopicId = w.topicId?.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let effectiveTopicId = (wordTopicId?.isEmpty == false) ? wordTopicId! : targetTopicId
+                    _ = getOrCreateTopicSet(id: effectiveTopicId, name: "", desc: "", image: "")
+                    addWordToTopic(word: w, defaultTopicId: effectiveTopicId, topicSetsDict: &topicSetsDict)
+                }
             }
             
-            do {
-                let decoded = try JSONDecoder().decode([LooseWord].self, from: data)
-                for item in decoded {
-                    let wordVal = item.word?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-                    let meaningVal = item.meaning?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-                    let phoneticVal = item.phonetic?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-                    let exampleVal = item.example?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-                    let imageVal = item.image?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-                    let audioVal = item.audio?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-                    let topicVal = item.topicId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? currentTopicId
-                    let levelVal = item.level?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "Beginner"
-                    
-                    let status: ImportStatus
-                    let reason: String
-                    
-                    if wordVal.isEmpty || meaningVal.isEmpty || topicVal.isEmpty {
-                        status = .invalid
-                        reason = "Thiếu trường bắt buộc (word, meaning hoặc topicId)"
-                    } else if words.contains(where: { $0.word.lowercased() == wordVal.lowercased() && $0.topicId == topicVal }) {
-                        status = .duplicate
-                        reason = "Từ vựng này đã tồn tại trong chủ đề"
-                    } else {
-                        status = .valid
-                        reason = "Hợp lệ"
-                    }
-                    
-                    records.append(ImportRecord(
-                        word: wordVal,
-                        phonetic: phoneticVal,
-                        meaning: meaningVal,
-                        example: exampleVal,
-                        image: imageVal,
-                        audio: audioVal,
-                        topicId: topicVal,
-                        level: levelVal,
-                        status: status,
-                        statusReason: reason
-                    ))
-                }
-            } catch {
-                self.errorMessage = "Không thể parse cấu trúc JSON: \(error.localizedDescription)"
+            if !parsedSuccessfully {
+                self.errorMessage = "Không thể đọc cấu trúc JSON. Vui lòng kiểm tra định dạng hoặc bấm Load Mẫu."
                 return
             }
         } else {
@@ -534,100 +657,145 @@ class AdminViewModel: ObservableObject {
             
             var startIndex = 0
             let firstLineFields = lines[0].lowercased()
-            // Detect CSV Header
             if firstLineFields.contains("word") || firstLineFields.contains("meaning") {
                 startIndex = 1
             }
+            
+            let defaultSetId = getOrCreateTopicSet(id: currentTopicId, name: "", desc: "", image: "")
             
             for index in startIndex..<lines.count {
                 let line = lines[index].trimmingCharacters(in: .whitespacesAndNewlines)
                 if line.isEmpty { continue }
                 
                 let fields = parseCSVRow(line)
-                
                 let wordVal = fields.indices.contains(0) ? fields[0] : ""
                 let phoneticVal = fields.indices.contains(1) ? fields[1] : ""
                 let meaningVal = fields.indices.contains(2) ? fields[2] : ""
                 let exampleVal = fields.indices.contains(3) ? fields[3] : ""
                 let imageVal = fields.indices.contains(4) ? fields[4] : ""
                 let audioVal = fields.indices.contains(5) ? fields[5] : ""
-                let topicVal = (fields.indices.contains(6) && !fields[6].isEmpty) ? fields[6] : currentTopicId
+                let topicVal = (fields.indices.contains(6) && !fields[6].isEmpty) ? fields[6] : defaultSetId
                 let levelVal = (fields.indices.contains(7) && !fields[7].isEmpty) ? fields[7] : "Beginner"
                 
-                let status: ImportStatus
-                let reason: String
+                let targetSetId = getOrCreateTopicSet(id: topicVal, name: "", desc: "", image: "")
                 
-                if wordVal.isEmpty || meaningVal.isEmpty || topicVal.isEmpty {
+                var status: ImportStatus = .valid
+                var reason = "Hợp lệ"
+                
+                if wordVal.isEmpty || meaningVal.isEmpty {
                     status = .invalid
-                    reason = "Thiếu trường bắt buộc"
-                } else if words.contains(where: { $0.word.lowercased() == wordVal.lowercased() && $0.topicId == topicVal }) {
+                    reason = "Thiếu từ hoặc nghĩa"
+                } else if words.contains(where: { $0.word.lowercased() == wordVal.lowercased() && $0.topicId == targetSetId }) ||
+                            (topicSetsDict[targetSetId]?.words.contains(where: { $0.word.lowercased() == wordVal.lowercased() }) == true) {
                     status = .duplicate
                     reason = "Từ vựng này đã tồn tại trong chủ đề"
-                } else {
-                    status = .valid
-                    reason = "Hợp lệ"
                 }
                 
-                records.append(ImportRecord(
+                let record = ImportRecord(
                     word: wordVal,
                     phonetic: phoneticVal,
                     meaning: meaningVal,
                     example: exampleVal,
                     image: imageVal,
                     audio: audioVal,
-                    topicId: topicVal,
+                    topicId: targetSetId,
                     level: levelVal,
                     status: status,
                     statusReason: reason
-                ))
+                )
+                topicSetsDict[targetSetId]?.words.append(record)
             }
         }
         
-        self.parsedImportRecords = records
+        // Assemble final ordered topic sets
+        var finalSets: [ParsedTopicSet] = []
+        var allRecords: [ImportRecord] = []
         
-        // Update stats
-        let valid = records.filter { $0.status == .valid }.count
-        let duplicate = records.filter { $0.status == .duplicate }.count
-        let invalid = records.filter { $0.status == .invalid }.count
+        for id in topicSetsOrder {
+            if let set = topicSetsDict[id] {
+                finalSets.append(set)
+                allRecords.append(contentsOf: set.words)
+            }
+        }
+        
+        self.parsedTopicSets = finalSets
+        self.parsedImportRecords = allRecords
+        
+        let valid = allRecords.filter { $0.status == .valid }.count
+        let duplicate = allRecords.filter { $0.status == .duplicate }.count
+        let invalid = allRecords.filter { $0.status == .invalid }.count
         self.importStats = (validCount: valid, duplicateCount: duplicate, invalidCount: invalid)
     }
     
     func commitImportedRecords() async {
         self.isLoading = true
-        let validRecords = parsedImportRecords.filter { $0.status == .valid }
         var affectedTopicIds: Set<String> = []
         
-        for record in validRecords {
-            let wordId = "word_\(UUID().uuidString.prefix(8).lowercased())"
-            let newWord = VocabularyWord(
-                id: wordId,
-                word: record.word,
-                phonetic: record.phonetic,
-                meaning: record.meaning,
-                example: record.example,
-                image: record.image,
-                audio: record.audio,
-                topicId: record.topicId,
-                level: record.level
+        for topicSet in parsedTopicSets {
+            let topicId = topicSet.id
+            
+            // 1. Create or update Topic metadata
+            let existingTopic = topics.first(where: { $0.id == topicId })
+            let topicName = topicSet.name.isEmpty ? (existingTopic?.name ?? topicId.capitalized) : topicSet.name
+            let topicDesc = topicSet.description.isEmpty ? (existingTopic?.description ?? "") : topicSet.description
+            let topicImg = topicSet.image.isEmpty ? (existingTopic?.image ?? "folder") : topicSet.image
+            
+            let topicToSave = Topic(
+                id: topicId,
+                name: topicName,
+                description: topicDesc,
+                image: topicImg,
+                totalWords: (existingTopic?.totalWords ?? 0)
             )
             
             do {
-                try await repository.saveWord(word: newWord)
-                words.append(newWord)
-                affectedTopicIds.insert(record.topicId)
+                try await repository.saveTopic(topic: topicToSave)
+                if let tIdx = topics.firstIndex(where: { $0.id == topicId }) {
+                    topics[tIdx] = topicToSave
+                } else {
+                    topics.append(topicToSave)
+                }
+                affectedTopicIds.insert(topicId)
             } catch {
-                print("Import failure for word \(record.word): \(error.localizedDescription)")
+                print("Lỗi lưu topic \(topicId): \(error.localizedDescription)")
+            }
+            
+            // 2. Save valid words in this topic
+            let validWords = topicSet.words.filter { $0.status == .valid }
+            for record in validWords {
+                let wordId = "word_\(UUID().uuidString.prefix(8).lowercased())"
+                let newWord = VocabularyWord(
+                    id: wordId,
+                    word: record.word,
+                    phonetic: record.phonetic,
+                    meaning: record.meaning,
+                    example: record.example,
+                    image: record.image,
+                    audio: record.audio,
+                    topicId: topicId,
+                    level: record.level
+                )
+                
+                do {
+                    try await repository.saveWord(word: newWord)
+                    words.append(newWord)
+                    affectedTopicIds.insert(topicId)
+                } catch {
+                    print("Import failure for word \(record.word): \(error.localizedDescription)")
+                }
             }
         }
         
-        // Update local cached topics totalWords counts
+        // 3. Update totalWords on topic models
         for topicId in affectedTopicIds {
+            let count = words.filter { $0.topicId == topicId }.count
             if let tIdx = topics.firstIndex(where: { $0.id == topicId }) {
-                topics[tIdx].totalWords = words.filter { $0.topicId == topicId }.count
+                topics[tIdx].totalWords = count
             }
         }
         
         // Reset states
+        self.parsedTopicSets = []
         self.parsedImportRecords = []
         self.importStats = (validCount: 0, duplicateCount: 0, invalidCount: 0)
         self.isLoading = false
@@ -685,6 +853,49 @@ class AdminViewModel: ObservableObject {
         } catch {
             self.errorMessage = error.localizedDescription
         }
+    }
+    
+    func saveQuizTopic(id: String?, name: String, description: String, image: String) async {
+        let topicId = (id?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false) ?
+            id!.trimmingCharacters(in: .whitespacesAndNewlines) :
+            name.lowercased().replacingOccurrences(of: " ", with: "_").trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        let questionCount = quizzes.filter { $0.topicId == topicId }.count
+        let topic = Topic(
+            id: topicId,
+            name: name,
+            description: description,
+            image: image.isEmpty ? "questionmark.folder.fill" : image,
+            totalWords: questionCount
+        )
+        
+        do {
+            try await repository.saveQuizTopic(topic: topic)
+            if let idx = topics.firstIndex(where: { $0.id == topicId }) {
+                topics[idx] = topic
+            } else {
+                topics.append(topic)
+            }
+        } catch {
+            self.errorMessage = error.localizedDescription
+        }
+    }
+    
+    func deleteQuizTopic(topicId: String) async {
+        self.isLoading = true
+        do {
+            try await repository.deleteQuizTopic(topicId: topicId)
+            quizzes.removeAll(where: { $0.topicId == topicId })
+            
+            // If topic has no vocabulary words, remove from topics list as well
+            let wordCount = words.filter { $0.topicId == topicId }.count
+            if wordCount == 0 {
+                topics.removeAll(where: { $0.id == topicId })
+            }
+        } catch {
+            self.errorMessage = error.localizedDescription
+        }
+        self.isLoading = false
     }
     
     // MARK: - Listening Exercises Operations

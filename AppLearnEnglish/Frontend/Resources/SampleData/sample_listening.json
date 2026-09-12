@@ -1,0 +1,30 @@
+[
+  {
+    "sentence": "I will meet you at the airport.",
+    "translation": "Tôi sẽ đón bạn tại sân bay.",
+    "topicId": "travel",
+    "level": "Beginner",
+    "hint": "airport"
+  },
+  {
+    "sentence": "You must show your passport at the border.",
+    "translation": "Bạn phải xuất trình hộ chiếu tại biên giới.",
+    "topicId": "travel",
+    "level": "Beginner",
+    "hint": "passport"
+  },
+  {
+    "sentence": "We managed to negotiate a lower price.",
+    "translation": "Chúng tôi đã đàm phán thành công mức giá thấp hơn.",
+    "topicId": "business",
+    "level": "Intermediate",
+    "hint": "negotiate"
+  },
+  {
+    "sentence": "Google uses a complex search algorithm.",
+    "translation": "Google sử dụng một thuật toán tìm kiếm phức tạp.",
+    "topicId": "technology",
+    "level": "Advanced",
+    "hint": "algorithm"
+  }
+]

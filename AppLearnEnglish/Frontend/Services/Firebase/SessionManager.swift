@@ -13,6 +13,7 @@ class SessionManager: ObservableObject {
     @Published var currentUserModel: UserModel? = nil
     @Published var isLoggedIn: Bool = false
     @Published var userRole: String? = nil
+    @Published var isPreviewingAsStudent: Bool = false
     @Published var isLoading: Bool = true
     @Published var errorMessage: String? = nil
     
@@ -42,6 +43,7 @@ class SessionManager: ObservableObject {
                     self.currentUserModel = nil
                     self.isLoggedIn = false
                     self.userRole = nil
+                    self.isPreviewingAsStudent = false
                     self.isLoading = false
                 }
                 return
@@ -134,6 +136,7 @@ class SessionManager: ObservableObject {
     
     // MARK: - Sign Out
     func signOut() {
+        self.isPreviewingAsStudent = false
         do {
             try Auth.auth().signOut()
         } catch {

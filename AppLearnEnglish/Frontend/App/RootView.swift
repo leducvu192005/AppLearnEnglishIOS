@@ -31,7 +31,7 @@ struct RootView: View {
                 
             } else if sessionManager.isLoggedIn {
                 // MARK: - Authenticated States
-                if sessionManager.userRole == "admin" {
+                if sessionManager.userRole == "admin" && !sessionManager.isPreviewingAsStudent {
                     AdminHomeView()
                         .transition(.slide.combined(with: .opacity))
                 } else {

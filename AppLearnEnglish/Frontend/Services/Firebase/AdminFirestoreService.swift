@@ -345,6 +345,60 @@ class AdminFirestoreService {
         try? await db.collection("quizzes").document(quizId).delete()
     }
     
+    func saveQuizTopic(topic: Topic) async throws {
+        let topicDocRef = db.collection("quizzes").document(topic.id)
+        try await topicDocRef.setData([
+            "id": topic.id,
+            "topicId": topic.id,
+            "name": topic.name,
+            "description": topic.description,
+            "image": topic.image,
+            "updatedAt": FieldValue.serverTimestamp()
+        ], merge: true)
+        
+        // Also save/sync to topics collection so User app and Admin views recognize the topic
+        let mainTopicDocRef = db.collection("topics").document(topic.id)
+        try await mainTopicDocRef.setData([
+            "id": topic.id,
+            "name": topic.name,
+            "description": topic.description,
+            "image": topic.image.isEmpty ? "folder.fill" : topic.image,
+            "totalWords": topic.totalWords
+        ], merge: true)
+    }
+    
+    func deleteQuizTopic(topicId: String) async throws {
+        let topicDocRef = db.collection("quizzes").document(topicId)
+        
+        // 1. Delete all questions in subcollection /quizzes/{topicId}/questions
+        let questionsSnapshot = try await topicDocRef.collection("questions").getDocuments()
+        let batch = db.batch()
+        for doc in questionsSnapshot.documents {
+            batch.deleteDocument(doc.reference)
+        }
+        try await batch.commit()
+        
+        // 2. Delete the quiz topic document /quizzes/{topicId}
+        try await topicDocRef.delete()
+        
+        // 3. Delete any legacy flat quiz docs with topicId == topicId
+        let legacySnapshot = try await db.collection("quizzes").whereField("topicId", isEqualTo: topicId).getDocuments()
+        if !legacySnapshot.documents.isEmpty {
+            let legacyBatch = db.batch()
+            for doc in legacySnapshot.documents {
+                legacyBatch.deleteDocument(doc.reference)
+            }
+            try await legacyBatch.commit()
+        }
+        
+        // 4. Check if there are any vocabulary words using this topicId
+        let wordsSnapshot = try await db.collection("vocabulary").whereField("topicId", isEqualTo: topicId).getDocuments()
+        if wordsSnapshot.documents.isEmpty {
+            // If no vocabulary words exist, also remove the topic from /topics/{topicId}
+            try? await db.collection("topics").document(topicId).delete()
+        }
+    }
+    
     // MARK: - Listening Exercises Management (/listening_exercises/{topicId}/sentences/{exerciseId})
     func fetchAllListeningExercises() async throws -> [ListeningExercise] {
         var allExercises: [ListeningExercise] = []
