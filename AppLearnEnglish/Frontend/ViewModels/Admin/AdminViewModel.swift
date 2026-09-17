@@ -43,7 +43,9 @@ class AdminViewModel: ObservableObject {
     @Published var users: [UserModel] = []
     @Published var topics: [Topic] = []
     @Published var words: [VocabularyWord] = []
+    @Published var quizTopics: [Topic] = []
     @Published var quizzes: [Quiz] = []
+    @Published var listeningTopics: [Topic] = []
     @Published var listeningExercises: [ListeningExercise] = []
     
     @Published var isLoading = false
@@ -225,36 +227,50 @@ class AdminViewModel: ObservableObject {
         self.isLoading = true
         self.errorMessage = nil
         
-        // 1. Load Topics (Critical)
+        // 1. Load Vocabulary Topics (from /topics)
         do {
-            self.topics = try await FirestoreService.shared.fetchTopics()
+            self.topics = try await repository.getAllTopics()
         } catch {
-            print("Admin: Failed to load topics: \(error.localizedDescription)")
-            self.errorMessage = "Không thể tải danh sách chủ đề: \(error.localizedDescription)"
+            print("Admin: Failed to load vocabulary topics: \(error.localizedDescription)")
+            self.errorMessage = "Không thể tải danh sách chủ đề từ vựng: \(error.localizedDescription)"
         }
         
-        // 2. Load Words
+        // 2. Load Words (from /vocabulary)
         do {
             self.words = try await repository.getAllVocabulary()
         } catch {
             print("Admin: Failed to load vocabulary: \(error.localizedDescription)")
         }
         
-        // 3. Load Quizzes
+        // 3. Load Quiz Topics (from /quizzes)
+        do {
+            self.quizTopics = try await repository.getAllQuizTopics()
+        } catch {
+            print("Admin: Failed to load quiz topics: \(error.localizedDescription)")
+        }
+        
+        // 4. Load Quizzes
         do {
             self.quizzes = try await repository.getAllQuizzes()
         } catch {
             print("Admin: Failed to load quizzes: \(error.localizedDescription)")
         }
         
-        // 4. Load Listening Exercises
+        // 5. Load Listening Topics (from /listening_exercises)
+        do {
+            self.listeningTopics = try await repository.getAllListeningTopics()
+        } catch {
+            print("Admin: Failed to load listening topics: \(error.localizedDescription)")
+        }
+        
+        // 6. Load Listening Exercises
         do {
             self.listeningExercises = try await repository.getAllListeningExercises()
         } catch {
             print("Admin: Failed to load listening exercises: \(error.localizedDescription)")
         }
         
-        // 5. Load Users (Requires Admin permissions on collection users)
+        // 7. Load Users (Requires Admin permissions on collection users)
         do {
             self.users = try await repository.getAllUsers()
         } catch {
@@ -430,6 +446,24 @@ class AdminViewModel: ObservableObject {
         } catch {
             self.errorMessage = error.localizedDescription
         }
+    }
+    
+    func saveWordsBatch(words newWords: [VocabularyWord], topicId: String) async {
+        isLoading = true
+        do {
+            try await repository.saveWordsBatch(words: newWords, topicId: topicId)
+            let newIds = Set(newWords.map(\.id))
+            words.removeAll { newIds.contains($0.id) }
+            words.append(contentsOf: newWords)
+            
+            let count = words.filter { $0.topicId == topicId }.count
+            if let idx = topics.firstIndex(where: { $0.id == topicId }) {
+                topics[idx].totalWords = count
+            }
+        } catch {
+            self.errorMessage = "Error saving vocabulary words batch: \(error.localizedDescription)"
+        }
+        isLoading = false
     }
     
     func deleteWord(wordId: String, topicId: String) async {
@@ -823,6 +857,11 @@ class AdminViewModel: ObservableObject {
             } else {
                 quizzes.append(newQuiz)
             }
+            
+            // Re-sync quiz topic count locally
+            if let tIdx = quizTopics.firstIndex(where: { $0.id == topicId }) {
+                quizTopics[tIdx].totalWords = quizzes.filter { $0.topicId == topicId }.count
+            }
         } catch {
             self.errorMessage = error.localizedDescription
         }
@@ -840,6 +879,11 @@ class AdminViewModel: ObservableObject {
                     quizzes.append(q)
                 }
             }
+            
+            // Re-sync quiz topic count locally
+            if let tIdx = quizTopics.firstIndex(where: { $0.id == topicId }) {
+                quizTopics[tIdx].totalWords = quizzes.filter { $0.topicId == topicId }.count
+            }
         } catch {
             self.errorMessage = error.localizedDescription
         }
@@ -849,7 +893,12 @@ class AdminViewModel: ObservableObject {
     func deleteQuiz(quizId: String, topicId: String? = nil) async {
         do {
             try await repository.deleteQuiz(quizId: quizId, topicId: topicId)
+            let removedTopicId = topicId ?? quizzes.first(where: { $0.id == quizId })?.topicId
             quizzes.removeAll(where: { $0.id == quizId })
+            
+            if let tId = removedTopicId, let tIdx = quizTopics.firstIndex(where: { $0.id == tId }) {
+                quizTopics[tIdx].totalWords = quizzes.filter { $0.topicId == tId }.count
+            }
         } catch {
             self.errorMessage = error.localizedDescription
         }
@@ -871,10 +920,10 @@ class AdminViewModel: ObservableObject {
         
         do {
             try await repository.saveQuizTopic(topic: topic)
-            if let idx = topics.firstIndex(where: { $0.id == topicId }) {
-                topics[idx] = topic
+            if let idx = quizTopics.firstIndex(where: { $0.id == topicId }) {
+                quizTopics[idx] = topic
             } else {
-                topics.append(topic)
+                quizTopics.append(topic)
             }
         } catch {
             self.errorMessage = error.localizedDescription
@@ -886,12 +935,7 @@ class AdminViewModel: ObservableObject {
         do {
             try await repository.deleteQuizTopic(topicId: topicId)
             quizzes.removeAll(where: { $0.topicId == topicId })
-            
-            // If topic has no vocabulary words, remove from topics list as well
-            let wordCount = words.filter { $0.topicId == topicId }.count
-            if wordCount == 0 {
-                topics.removeAll(where: { $0.id == topicId })
-            }
+            quizTopics.removeAll(where: { $0.id == topicId })
         } catch {
             self.errorMessage = error.localizedDescription
         }
@@ -918,6 +962,11 @@ class AdminViewModel: ObservableObject {
             } else {
                 listeningExercises.append(newExercise)
             }
+            
+            // Re-sync listening topic count locally
+            if let tIdx = listeningTopics.firstIndex(where: { $0.id == topicId }) {
+                listeningTopics[tIdx].totalWords = listeningExercises.filter { $0.topicId == topicId }.count
+            }
         } catch {
             self.errorMessage = error.localizedDescription
         }
@@ -935,6 +984,11 @@ class AdminViewModel: ObservableObject {
                     listeningExercises.append(ex)
                 }
             }
+            
+            // Re-sync listening topic count locally
+            if let tIdx = listeningTopics.firstIndex(where: { $0.id == topicId }) {
+                listeningTopics[tIdx].totalWords = listeningExercises.filter { $0.topicId == topicId }.count
+            }
         } catch {
             self.errorMessage = error.localizedDescription
         }
@@ -944,9 +998,52 @@ class AdminViewModel: ObservableObject {
     func deleteListeningExercise(exerciseId: String, topicId: String? = nil) async {
         do {
             try await repository.deleteListeningExercise(exerciseId: exerciseId, topicId: topicId)
+            let removedTopicId = topicId ?? listeningExercises.first(where: { $0.id == exerciseId })?.topicId
             listeningExercises.removeAll(where: { $0.id == exerciseId })
+            
+            if let tId = removedTopicId, let tIdx = listeningTopics.firstIndex(where: { $0.id == tId }) {
+                listeningTopics[tIdx].totalWords = listeningExercises.filter { $0.topicId == tId }.count
+            }
         } catch {
             self.errorMessage = error.localizedDescription
         }
+    }
+    
+    func saveListeningTopic(id: String?, name: String, description: String, image: String) async {
+        let topicId = (id?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false) ?
+            id!.trimmingCharacters(in: .whitespacesAndNewlines) :
+            name.lowercased().replacingOccurrences(of: " ", with: "_").trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        let sentenceCount = listeningExercises.filter { $0.topicId == topicId }.count
+        let topic = Topic(
+            id: topicId,
+            name: name,
+            description: description,
+            image: image.isEmpty ? "headphones" : image,
+            totalWords: sentenceCount
+        )
+        
+        do {
+            try await repository.saveListeningTopic(topic: topic)
+            if let idx = listeningTopics.firstIndex(where: { $0.id == topicId }) {
+                listeningTopics[idx] = topic
+            } else {
+                listeningTopics.append(topic)
+            }
+        } catch {
+            self.errorMessage = error.localizedDescription
+        }
+    }
+    
+    func deleteListeningTopic(topicId: String) async {
+        self.isLoading = true
+        do {
+            try await repository.deleteListeningTopic(topicId: topicId)
+            listeningExercises.removeAll(where: { $0.topicId == topicId })
+            listeningTopics.removeAll(where: { $0.id == topicId })
+        } catch {
+            self.errorMessage = error.localizedDescription
+        }
+        self.isLoading = false
     }
 }

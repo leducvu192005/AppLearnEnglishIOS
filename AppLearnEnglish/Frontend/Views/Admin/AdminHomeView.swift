@@ -57,9 +57,7 @@ struct AdminHomeView: View {
                     case 4:
                         AdminUsersView(viewModel: viewModel)
                     case 5:
-                        AdminSettingsView()
-                    case 6:
-                        AdminActivityLogView()
+                        AdminSettingsView(viewModel: viewModel)
                     default:
                         AdminOverviewView(
                             viewModel: viewModel,

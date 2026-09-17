@@ -74,14 +74,30 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         }
     }
     
-    // MARK: - Schedule Morning Word Of The Day alert
-    func scheduleWordOfDayReminder() {
+    // MARK: - Schedule Morning Word Of The Day alert (Dynamic from Firebase words)
+    func scheduleWordOfDayReminder(words: [VocabularyWord]? = nil) {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["word_of_the_day"])
         
+        let randomWord = words?.randomElement()
+        let wordTitle = randomWord != nil ? "💡 Từ vựng hôm nay: \(randomWord!.word)" : "💡 Từ vựng hôm nay: Serendipity"
+        let wordBody = randomWord != nil ? "[\(randomWord!.phonetic)] - Nghĩa: \(randomWord!.meaning). Mở app để luyện tập ngay!" : "Ý nghĩa: Sự tình cờ may mắn. Hãy mở app để xem cách sử dụng từ này!"
+        
         let content = UNMutableNotificationContent()
-        content.title = "💡 Từ vựng hôm nay: Serendipity"
-        content.body = "Ý nghĩa: Sự tình cờ may mắn. Hãy mở app để xem cách sử dụng từ này!"
+        content.title = wordTitle
+        content.body = wordBody
         content.sound = .default
+        
+        if let word = randomWord {
+            content.userInfo = [
+                "wordId": word.id,
+                "word": word.word,
+                "phonetic": word.phonetic,
+                "meaning": word.meaning,
+                "example": word.example,
+                "topicId": word.topicId,
+                "level": word.level
+            ]
+        }
         
         // Schedule for 8:00 AM every morning
         var dateComponents = DateComponents()
@@ -92,6 +108,97 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         let request = UNNotificationRequest(identifier: "word_of_the_day", content: content, trigger: trigger)
         
         UNUserNotificationCenter.current().add(request)
+    }
+    
+    // MARK: - Schedule Spaced Repetition (SRS) Review for Learned Words
+    /// Lên lịch ôn tập ngắt quãng: Sau 1 ngày (Day 1), sau 3 ngày (Day 3), và sau 1 tuần (Day 7)
+    func scheduleSRSReview(for word: VocabularyWord, learnedDate: Date = Date()) {
+        let isSRSEnabled = UserDefaults.standard.object(forKey: "AppLearnEnglish_EnableSRS") != nil
+            ? UserDefaults.standard.bool(forKey: "AppLearnEnglish_EnableSRS")
+            : true
+        guard isSRSEnabled else { return }
+        
+        let calendar = Calendar.current
+        
+        // Cấu hình 3 giai đoạn: Day 1, Day 3, Day 7
+        let stages: [(stage: Int, dayOffset: Int, title: String, body: String)] = [
+            (
+                stage: 1,
+                dayOffset: 1,
+                title: "🧠 Ôn tập từ vựng (Lần 1): \(word.word)",
+                body: "Bạn còn nhớ nghĩa của \"\(word.word) [\(word.phonetic)]\" không? Hãy ôn lại ngay để củng cố trí nhớ!"
+            ),
+            (
+                stage: 2,
+                dayOffset: 3,
+                title: "🔥 Ôn tập củng cố (Lần 2): \(word.word)",
+                body: "Đã 3 ngày kể từ khi học \"\(word.word)\". Hãy ôn lại để đưa từ này vào trí nhớ dài hạn nhé!"
+            ),
+            (
+                stage: 3,
+                dayOffset: 7,
+                title: "🏆 Hoàn thành ghi nhớ vĩnh viễn: \(word.word)",
+                body: "Chúc mừng bạn! Ôn lại lần cuối từ \"\(word.word) [\(word.phonetic)]\" để làm chủ từ vựng này hoàn toàn."
+            )
+        ]
+        
+        for item in stages {
+            guard let targetDate = calendar.date(byAdding: .day, value: item.dayOffset, to: learnedDate) else { continue }
+            
+            // Đặt giờ thông báo lúc 19:30 tối để người dùng thuận tiện ôn bài
+            var components = calendar.dateComponents([.year, .month, .day], from: targetDate)
+            components.hour = 19
+            components.minute = 30
+            components.second = 0
+            
+            guard let triggerDate = calendar.date(from: components), triggerDate > Date() else { continue }
+            
+            let content = UNMutableNotificationContent()
+            content.title = item.title
+            content.body = item.body
+            content.sound = .default
+            
+            let payload: [String: Any] = [
+                "wordId": word.id,
+                "word": word.word,
+                "phonetic": word.phonetic,
+                "meaning": word.meaning,
+                "example": word.example,
+                "topicId": word.topicId,
+                "level": word.level,
+                "srsStage": item.stage,
+                "isSRSReview": true
+            ]
+            content.userInfo = payload
+            
+            let triggerComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: triggerDate)
+            let trigger = UNCalendarNotificationTrigger(dateMatching: triggerComponents, repeats: false)
+            
+            let request = UNNotificationRequest(
+                identifier: "SRSReview_\(word.id)_Stage\(item.stage)",
+                content: content,
+                trigger: trigger
+            )
+            
+            UNUserNotificationCenter.current().add(request) { error in
+                if let error = error {
+                    print("❌ [SRS] Lỗi lên lịch ôn tập cho \(word.word) (Stage \(item.stage)): \(error.localizedDescription)")
+                } else {
+                    print("✅ [SRS] Đã lên lịch ôn tập cho '\(word.word)' Stage \(item.stage) vào: \(triggerDate)")
+                }
+            }
+        }
+    }
+    
+    // MARK: - Cancel SRS Review for a word
+    func cancelSRSReview(for wordId: String) {
+        let identifiers = [
+            "SRSReview_\(wordId)_Stage1",
+            "SRSReview_\(wordId)_Stage2",
+            "SRSReview_\(wordId)_Stage3"
+        ]
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: identifiers)
+        print("🗑️ [SRS] Đã hủy lịch ôn tập cho wordId: \(wordId)")
     }
     
     // MARK: - Schedule Passive Learning Notifications (12 different Oxford words/day)
@@ -215,22 +322,25 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let userInfo = response.notification.request.content.userInfo
-        print("📩 [NotificationManager] Người dùng mở thông báo. Payload: \(userInfo)")
-        
-        // 1. Handle Local Word payload
+        // 1. Handle Local Word or SRS Review payload
         if let wordId = userInfo["wordId"] as? String,
            let word = userInfo["word"] as? String,
            let phonetic = userInfo["phonetic"] as? String,
            let meaning = userInfo["meaning"] as? String {
             
-            let wordDict: [String: String] = [
+            let isSRS = userInfo["isSRSReview"] as? Bool ?? false
+            let stage = userInfo["srsStage"] as? Int ?? 1
+            
+            var wordDict: [String: Any] = [
                 "id": wordId,
                 "word": word,
                 "phonetic": phonetic,
                 "meaning": meaning,
                 "example": userInfo["example"] as? String ?? "",
                 "topicId": userInfo["topicId"] as? String ?? "custom",
-                "level": userInfo["level"] as? String ?? "Beginner"
+                "level": userInfo["level"] as? String ?? "Beginner",
+                "isSRSReview": isSRS,
+                "srsStage": stage
             ]
             
             DispatchQueue.main.async {

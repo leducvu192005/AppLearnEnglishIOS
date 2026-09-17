@@ -119,17 +119,24 @@ class AdminFirestoreService {
         ])
     }
     
-    // MARK: - Topic Management
+    // MARK: - 1. VOCABULARY & TOPICS (/topics and /vocabulary)
+    func fetchAllTopics() async throws -> [Topic] {
+        let snapshot = try await db.collection("topics").getDocuments()
+        return snapshot.documents.compactMap { doc in
+            try? doc.data(as: Topic.self)
+        }
+    }
+    
     func saveTopic(topic: Topic) async throws {
         let docRef = db.collection("topics").document(topic.id)
         try docRef.setData(from: topic, merge: true)
     }
     
     func deleteTopic(topicId: String) async throws {
-        // Delete the topic document
+        // Delete the vocabulary topic document
         try await db.collection("topics").document(topicId).delete()
         
-        // Optionally delete all words associated with this topic to keep clean
+        // Delete all vocabulary words associated with this topic
         let wordsSnapshot = try await db.collection("vocabulary")
             .whereField("topicId", isEqualTo: topicId)
             .getDocuments()
@@ -141,7 +148,6 @@ class AdminFirestoreService {
         try await batch.commit()
     }
     
-    // MARK: - Vocabulary Management
     func fetchAllVocabulary() async throws -> [VocabularyWord] {
         let snapshot = try await db.collection("vocabulary").getDocuments()
         return snapshot.documents.compactMap { doc in
@@ -152,7 +158,6 @@ class AdminFirestoreService {
     func saveWord(word: VocabularyWord) async throws {
         let docRef = db.collection("vocabulary").document(word.id)
         
-        // Check if there was an existing word with a different topicId
         var oldTopicId: String? = nil
         if let existingDoc = try? await docRef.getDocument(), existingDoc.exists {
             oldTopicId = existingDoc.data()?["topicId"] as? String
@@ -169,7 +174,6 @@ class AdminFirestoreService {
             "totalWords": newCountSnapshot.documents.count
         ])
         
-        // If the topic was changed, update the old topic's totalWords count too
         if let oldId = oldTopicId, oldId != newTopicId {
             let oldCountSnapshot = try await db.collection("vocabulary")
                 .whereField("topicId", isEqualTo: oldId)
@@ -183,19 +187,103 @@ class AdminFirestoreService {
     func deleteWord(wordId: String, topicId: String) async throws {
         try await db.collection("vocabulary").document(wordId).delete()
         
-        // Update topic count
         let wordsInTopicSnapshot = try await db.collection("vocabulary")
             .whereField("topicId", isEqualTo: topicId)
             .getDocuments()
         
         let totalCount = wordsInTopicSnapshot.documents.count
-        
         try await db.collection("topics").document(topicId).updateData([
             "totalWords": totalCount
         ])
     }
     
-    // MARK: - Quiz Management (/quizzes/{topicId}/questions/{quizId})
+    func saveWordsBatch(words: [VocabularyWord], topicId: String) async throws {
+        let resolvedTopicId = topicId.isEmpty ? "general" : topicId
+        let topicDocRef = db.collection("topics").document(resolvedTopicId)
+        
+        try await topicDocRef.setData([
+            "id": resolvedTopicId,
+            "updatedAt": FieldValue.serverTimestamp()
+        ], merge: true)
+        
+        let batch = db.batch()
+        for word in words {
+            let docRef = db.collection("vocabulary").document(word.id)
+            let dict: [String: Any] = [
+                "id": word.id,
+                "word": word.word,
+                "phonetic": word.phonetic,
+                "meaning": word.meaning,
+                "example": word.example,
+                "image": word.image,
+                "audio": word.audio,
+                "topicId": resolvedTopicId,
+                "level": word.level
+            ]
+            batch.setData(dict, forDocument: docRef, merge: true)
+        }
+        try await batch.commit()
+        
+        let countSnapshot = try await db.collection("vocabulary")
+            .whereField("topicId", isEqualTo: resolvedTopicId)
+            .getDocuments()
+        try await topicDocRef.updateData([
+            "totalWords": countSnapshot.documents.count
+        ])
+    }
+    
+    // MARK: - 2. QUIZZES SEPARATE COLLECTION (/quizzes and /quizzes/{topicId}/questions)
+    func fetchQuizTopics() async throws -> [Topic] {
+        let snapshot = try await db.collection("quizzes").getDocuments()
+        return snapshot.documents.compactMap { doc -> Topic? in
+            let data = doc.data()
+            let topicId = doc.documentID
+            let name = data["name"] as? String ?? topicId.capitalized
+            let desc = data["description"] as? String ?? ""
+            let image = data["image"] as? String ?? "checklist"
+            let count = data["totalQuestions"] as? Int ?? 0
+            return Topic(id: topicId, name: name, description: desc, image: image, totalWords: count)
+        }
+    }
+    
+    func saveQuizTopic(topic: Topic) async throws {
+        let topicDocRef = db.collection("quizzes").document(topic.id)
+        try await topicDocRef.setData([
+            "id": topic.id,
+            "topicId": topic.id,
+            "name": topic.name,
+            "description": topic.description,
+            "image": topic.image,
+            "totalQuestions": topic.totalWords,
+            "updatedAt": FieldValue.serverTimestamp()
+        ], merge: true)
+    }
+    
+    func deleteQuizTopic(topicId: String) async throws {
+        let topicDocRef = db.collection("quizzes").document(topicId)
+        
+        // 1. Delete all questions in subcollection /quizzes/{topicId}/questions
+        let questionsSnapshot = try await topicDocRef.collection("questions").getDocuments()
+        let batch = db.batch()
+        for doc in questionsSnapshot.documents {
+            batch.deleteDocument(doc.reference)
+        }
+        try await batch.commit()
+        
+        // 2. Delete the quiz topic document /quizzes/{topicId}
+        try await topicDocRef.delete()
+        
+        // 3. Delete any legacy flat quiz docs with topicId == topicId
+        let legacySnapshot = try await db.collection("quizzes").whereField("topicId", isEqualTo: topicId).getDocuments()
+        if !legacySnapshot.documents.isEmpty {
+            let legacyBatch = db.batch()
+            for doc in legacySnapshot.documents {
+                legacyBatch.deleteDocument(doc.reference)
+            }
+            try await legacyBatch.commit()
+        }
+    }
+    
     func fetchAllQuizzes() async throws -> [Quiz] {
         var allQuizzes: [Quiz] = []
         var foundDocIds = Set<String>()
@@ -229,7 +317,7 @@ class AdminFirestoreService {
                     }
                 }
                 
-                // Also check if tDoc is a legacy flat quiz itself
+                // Legacy flat quiz document check
                 let tData = tDoc.data()
                 if let q = tData["question"] as? String,
                    let ans = tData["answers"] as? [String],
@@ -256,7 +344,7 @@ class AdminFirestoreService {
         let topicId = quiz.topicId.isEmpty ? "general" : quiz.topicId
         let topicDocRef = db.collection("quizzes").document(topicId)
         
-        // 1. Ensure Topic Document in /quizzes/{topicId} exists
+        // 1. Ensure Quiz Topic Document exists
         try await topicDocRef.setData([
             "id": topicId,
             "topicId": topicId,
@@ -341,48 +429,52 @@ class AdminFirestoreService {
             }
         }
         
-        // Also cleanup legacy root doc if exists
         try? await db.collection("quizzes").document(quizId).delete()
     }
     
-    func saveQuizTopic(topic: Topic) async throws {
-        let topicDocRef = db.collection("quizzes").document(topic.id)
+    // MARK: - 3. LISTENING SEPARATE COLLECTION (/listening_exercises and /listening_exercises/{topicId}/sentences)
+    func fetchListeningTopics() async throws -> [Topic] {
+        let snapshot = try await db.collection("listening_exercises").getDocuments()
+        return snapshot.documents.compactMap { doc -> Topic? in
+            let data = doc.data()
+            let topicId = doc.documentID
+            let name = data["name"] as? String ?? topicId.capitalized
+            let desc = data["description"] as? String ?? ""
+            let image = data["image"] as? String ?? "headphones"
+            let count = data["totalSentences"] as? Int ?? 0
+            return Topic(id: topicId, name: name, description: desc, image: image, totalWords: count)
+        }
+    }
+    
+    func saveListeningTopic(topic: Topic) async throws {
+        let topicDocRef = db.collection("listening_exercises").document(topic.id)
         try await topicDocRef.setData([
             "id": topic.id,
             "topicId": topic.id,
             "name": topic.name,
             "description": topic.description,
             "image": topic.image,
+            "totalSentences": topic.totalWords,
             "updatedAt": FieldValue.serverTimestamp()
-        ], merge: true)
-        
-        // Also save/sync to topics collection so User app and Admin views recognize the topic
-        let mainTopicDocRef = db.collection("topics").document(topic.id)
-        try await mainTopicDocRef.setData([
-            "id": topic.id,
-            "name": topic.name,
-            "description": topic.description,
-            "image": topic.image.isEmpty ? "folder.fill" : topic.image,
-            "totalWords": topic.totalWords
         ], merge: true)
     }
     
-    func deleteQuizTopic(topicId: String) async throws {
-        let topicDocRef = db.collection("quizzes").document(topicId)
+    func deleteListeningTopic(topicId: String) async throws {
+        let topicDocRef = db.collection("listening_exercises").document(topicId)
         
-        // 1. Delete all questions in subcollection /quizzes/{topicId}/questions
-        let questionsSnapshot = try await topicDocRef.collection("questions").getDocuments()
+        // 1. Delete all sentences in subcollection /listening_exercises/{topicId}/sentences
+        let sentencesSnapshot = try await topicDocRef.collection("sentences").getDocuments()
         let batch = db.batch()
-        for doc in questionsSnapshot.documents {
+        for doc in sentencesSnapshot.documents {
             batch.deleteDocument(doc.reference)
         }
         try await batch.commit()
         
-        // 2. Delete the quiz topic document /quizzes/{topicId}
+        // 2. Delete the listening topic document /listening_exercises/{topicId}
         try await topicDocRef.delete()
         
-        // 3. Delete any legacy flat quiz docs with topicId == topicId
-        let legacySnapshot = try await db.collection("quizzes").whereField("topicId", isEqualTo: topicId).getDocuments()
+        // 3. Delete any legacy flat listening docs with topicId == topicId
+        let legacySnapshot = try await db.collection("listening_exercises").whereField("topicId", isEqualTo: topicId).getDocuments()
         if !legacySnapshot.documents.isEmpty {
             let legacyBatch = db.batch()
             for doc in legacySnapshot.documents {
@@ -390,16 +482,8 @@ class AdminFirestoreService {
             }
             try await legacyBatch.commit()
         }
-        
-        // 4. Check if there are any vocabulary words using this topicId
-        let wordsSnapshot = try await db.collection("vocabulary").whereField("topicId", isEqualTo: topicId).getDocuments()
-        if wordsSnapshot.documents.isEmpty {
-            // If no vocabulary words exist, also remove the topic from /topics/{topicId}
-            try? await db.collection("topics").document(topicId).delete()
-        }
     }
     
-    // MARK: - Listening Exercises Management (/listening_exercises/{topicId}/sentences/{exerciseId})
     func fetchAllListeningExercises() async throws -> [ListeningExercise] {
         var allExercises: [ListeningExercise] = []
         var foundDocIds = Set<String>()
@@ -432,7 +516,7 @@ class AdminFirestoreService {
                     }
                 }
                 
-                // Also check if tDoc is a legacy flat listening exercise
+                // Legacy flat listening exercise check
                 let tData = tDoc.data()
                 if let s = tData["sentence"] as? String,
                    let tr = tData["translation"] as? String {
