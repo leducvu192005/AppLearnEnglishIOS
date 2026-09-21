@@ -47,6 +47,7 @@ class AdminViewModel: ObservableObject {
     @Published var quizzes: [Quiz] = []
     @Published var listeningTopics: [Topic] = []
     @Published var listeningExercises: [ListeningExercise] = []
+    @Published var notifications: [AdminNotification] = []
     
     @Published var isLoading = false
     @Published var errorMessage: String? = nil
@@ -279,6 +280,13 @@ class AdminViewModel: ObservableObject {
             if self.errorMessage == nil {
                 self.errorMessage = "Cảnh báo: Không có quyền truy cập danh sách học viên (Kiểm tra lại Security Rules của bảng users)."
             }
+        }
+        
+        // 8. Load Notifications History (from /notifications_history)
+        do {
+            self.notifications = try await repository.getAllNotifications()
+        } catch {
+            print("Admin: Failed to load notifications: \(error.localizedDescription)")
         }
         
         self.isLoading = false
@@ -1045,5 +1053,61 @@ class AdminViewModel: ObservableObject {
             self.errorMessage = error.localizedDescription
         }
         self.isLoading = false
+    }
+    
+    // MARK: - Notification Operations
+    func sendNotification(
+        title: String,
+        body: String,
+        targetType: String,
+        targetUserId: String? = nil,
+        targetUserName: String? = nil,
+        category: String = "vocab",
+        deepLink: String = "home",
+        imageUrl: String? = nil
+    ) async -> Bool {
+        let count: Int
+        if targetType == "all" {
+            count = max(users.count, 1)
+        } else if targetType == "streak_risk" {
+            count = max(users.filter { $0.streak > 0 }.count, 1)
+        } else if targetType == "srs_pending" {
+            count = max(users.count, 1)
+        } else {
+            count = 1
+        }
+        
+        let notif = AdminNotification(
+            id: "notif_\(UUID().uuidString.prefix(8).lowercased())",
+            title: title,
+            body: body,
+            targetType: targetType,
+            targetUserId: targetUserId,
+            targetUserName: targetUserName,
+            category: category,
+            deepLink: deepLink,
+            imageUrl: imageUrl,
+            recipientCount: count,
+            status: "sent",
+            sentAt: Date()
+        )
+        
+        do {
+            try await repository.saveNotification(notification: notif)
+            self.notifications.insert(notif, at: 0)
+            return true
+        } catch {
+            self.errorMessage = "Lỗi khi gửi thông báo: \(error.localizedDescription)"
+            return false
+        }
+    }
+    
+    func deleteNotification(id: String) async {
+        do {
+            try await repository.deleteNotification(id: id)
+            self.notifications.removeAll(where: { $0.id == id })
+        } catch {
+            self.errorMessage = "Lỗi khi xóa thông báo: \(error.localizedDescription)"
+        }
     }
 }

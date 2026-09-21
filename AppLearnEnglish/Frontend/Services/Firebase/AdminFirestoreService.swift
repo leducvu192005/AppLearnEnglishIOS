@@ -631,4 +631,45 @@ class AdminFirestoreService {
         
         try? await db.collection("listening_exercises").document(exerciseId).delete()
     }
+    
+    // MARK: - 4. NOTIFICATIONS & PUSH CAMPAIGNS (/notifications_history)
+    func fetchAllNotifications() async throws -> [AdminNotification] {
+        do {
+            let snapshot = try await db.collection("notifications_history")
+                .order(by: "sentAt", descending: true)
+                .getDocuments()
+            
+            return snapshot.documents.compactMap { doc in
+                try? doc.data(as: AdminNotification.self)
+            }
+        } catch {
+            print("Error fetching notifications: \(error.localizedDescription)")
+            return []
+        }
+    }
+    
+    func saveNotification(notification: AdminNotification) async throws {
+        let docRef = db.collection("notifications_history").document(notification.id)
+        try docRef.setData(from: notification, merge: true)
+        
+        // Also write in recipient in-app notifications subcollection
+        if notification.targetType == "specific_user", let userId = notification.targetUserId, !userId.isEmpty {
+            let userNotifRef = db.collection("users").document(userId).collection("notifications").document(notification.id)
+            var dict: [String: Any] = [
+                "id": notification.id,
+                "title": notification.title,
+                "body": notification.body,
+                "category": notification.category,
+                "createdAt": FieldValue.serverTimestamp(),
+                "isRead": false
+            ]
+            if let link = notification.deepLink { dict["deepLink"] = link }
+            if let img = notification.imageUrl { dict["imageUrl"] = img }
+            try? await userNotifRef.setData(dict, merge: true)
+        }
+    }
+    
+    func deleteNotification(id: String) async throws {
+        try await db.collection("notifications_history").document(id).delete()
+    }
 }

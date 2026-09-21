@@ -11,7 +11,21 @@
 		24F14F083795F0395985EEC0 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 4515A2ACED6E1E4EA9AE4D4D /* FirebaseAuth */; };
 		998E1027FDF4103CC2D25918 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 939581A84250A3E7B3427CDF /* FirebaseFirestore */; };
 		9F4B93F13D049E398657DC31 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2CE2AF80AB58397B9C64FBCE /* FirebaseCore */; };
+		B2E5D0E3F9C8B716250DFBB2 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = A1F4C9D2E8B7A60514FCEAA1 /* FirebaseMessaging */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		829FA0CB304951E80083F5A2 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		47EC7774661C75496B05BECF /* GoogleService-Info.plist */ = {isa = PBXFileReference; explicitFileType = text.plist; name = "GoogleService-Info.plist"; path = "AppLearnEnglish/Frontend/Resources/GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -34,6 +48,7 @@
 				9F4B93F13D049E398657DC31 /* FirebaseCore in Frameworks */,
 				24F14F083795F0395985EEC0 /* FirebaseAuth in Frameworks */,
 				998E1027FDF4103CC2D25918 /* FirebaseFirestore in Frameworks */,
+				B2E5D0E3F9C8B716250DFBB2 /* FirebaseMessaging in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -67,6 +82,7 @@
 				82D5645F300D032000EDC427 /* Sources */,
 				82D56460300D032000EDC427 /* Frameworks */,
 				82D56461300D032000EDC427 /* Resources */,
+				829FA0CB304951E80083F5A2 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
@@ -80,6 +96,7 @@
 				2CE2AF80AB58397B9C64FBCE /* FirebaseCore */,
 				4515A2ACED6E1E4EA9AE4D4D /* FirebaseAuth */,
 				939581A84250A3E7B3427CDF /* FirebaseFirestore */,
+				A1F4C9D2E8B7A60514FCEAA1 /* FirebaseMessaging */,
 			);
 			productName = AppLearnEnglish;
 			productReference = 82D56463300D032000EDC427 /* AppLearnEnglish.app */;
@@ -268,15 +285,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_ENTITLEMENTS = AppLearnEnglish/AppLearnEnglish.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3LD2BAMUC5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Ứng dụng cần truy cập microphone để bạn luyện phát âm.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Ứng dụng cần nhận diện giọng nói để kiểm tra phát âm.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Bạn có muốn bật giọng nói để luyện tập không?";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -307,15 +324,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_ENTITLEMENTS = AppLearnEnglish/AppLearnEnglish.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3LD2BAMUC5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Ứng dụng cần truy cập microphone để bạn luyện phát âm.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Ứng dụng cần nhận diện giọng nói để kiểm tra phát âm.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Bạn có muốn bật giọng nói để luyện tập không?";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -390,6 +407,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 86E55DC1A3948A23AC4E99AD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFirestore;
+		};
+		A1F4C9D2E8B7A60514FCEAA1 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 86E55DC1A3948A23AC4E99AD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
