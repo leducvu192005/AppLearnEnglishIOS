@@ -52,10 +52,7 @@ class AdminViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String? = nil
     
-    // Search, Filter & Sort States
-    @Published var topicSearchText = ""
-    @Published var selectedTopicSort = "A-Z" // "A-Z", "Z-A", "Most Words", "Least Words"
-    
+    // Search, Filter & Sort States for Vocabulary
     @Published var wordSearchText = ""
     @Published var selectedLevelFilter = "All" // "All", "Beginner", "Intermediate", "Advanced"
     @Published var selectedWordSort = "A-Z" // "A-Z", "Z-A", "Newest", "Oldest"
@@ -86,25 +83,87 @@ class AdminViewModel: ObservableObject {
     
     // MARK: - Computed Properties for Filters & Searching
     
-    var filteredTopics: [Topic] {
-        var result = topics
+    var vocabularyDatasets: [Topic] {
+        var topicsMap: [String: Topic] = [:]
         
-        let searchTrimmed = topicSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !searchTrimmed.isEmpty {
-            let searchLower = searchTrimmed.lowercased()
-            result = result.filter { $0.name.lowercased().contains(searchLower) }
+        // 1. Topics loaded directly from Firestore /vocabulary documents
+        for t in topics {
+            let count = words.filter {
+                if t.id.lowercased() == "general" {
+                    return $0.topicId.isEmpty || $0.topicId.lowercased() == "general"
+                }
+                return $0.topicId.lowercased() == t.id.lowercased()
+            }.count
+            topicsMap[t.id.lowercased()] = Topic(id: t.id, name: t.name, description: t.description, image: t.image.isEmpty ? "folder.fill" : t.image, totalWords: count)
         }
         
-        result.sort { (t1, t2) -> Bool in
-            switch selectedTopicSort {
+        // 2. Dynamic topics from words whose topicId is not yet registered in topics collection
+        for w in words {
+            let tid = w.topicId.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            let key = tid.isEmpty ? "general" : tid
+            if topicsMap[key] == nil {
+                let autoName = key.replacingOccurrences(of: "_", with: " ").capitalized
+                let count = words.filter {
+                    if key == "general" {
+                        return $0.topicId.isEmpty || $0.topicId.lowercased() == "general"
+                    }
+                    return $0.topicId.lowercased() == key
+                }.count
+                topicsMap[key] = Topic(
+                    id: key,
+                    name: autoName,
+                    description: "Bộ từ vựng \(autoName)",
+                    image: "folder.fill",
+                    totalWords: count
+                )
+            }
+        }
+        
+        var list = Array(topicsMap.values)
+        let query = wordSearchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if !query.isEmpty {
+            list = list.filter {
+                $0.name.lowercased().contains(query) ||
+                $0.id.lowercased().contains(query) ||
+                $0.description.lowercased().contains(query)
+            }
+        }
+        
+        return list.sorted {
+            if $0.totalWords != $1.totalWords {
+                return $0.totalWords > $1.totalWords
+            }
+            return $0.name < $1.name
+        }
+    }
+    
+    var filteredWords: [VocabularyWord] {
+        var result = words
+        
+        let searchTrimmed = wordSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !searchTrimmed.isEmpty {
+            let searchLower = searchTrimmed.lowercased()
+            result = result.filter {
+                $0.word.lowercased().contains(searchLower) ||
+                $0.meaning.lowercased().contains(searchLower) ||
+                $0.phonetic.lowercased().contains(searchLower)
+            }
+        }
+        
+        if selectedLevelFilter != "All" {
+            result = result.filter { $0.level.lowercased() == selectedLevelFilter.lowercased() }
+        }
+        
+        result.sort { (w1, w2) -> Bool in
+            switch selectedWordSort {
             case "Z-A":
-                return t1.name > t2.name
-            case "Most Words":
-                return t1.totalWords > t2.totalWords
-            case "Least Words":
-                return t1.totalWords < t2.totalWords
+                return w1.word > w2.word
+            case "Newest":
+                return w1.id > w2.id
+            case "Oldest":
+                return w1.id < w2.id
             default: // "A-Z"
-                return t1.name < t2.name
+                return w1.word < w2.word
             }
         }
         
@@ -112,14 +171,21 @@ class AdminViewModel: ObservableObject {
     }
     
     func filteredWords(for topicId: String) -> [VocabularyWord] {
-        var result = words.filter { $0.topicId == topicId }
+        let topicWords = words.filter {
+            if topicId.lowercased() == "general" {
+                return $0.topicId.isEmpty || $0.topicId.lowercased() == "general"
+            }
+            return $0.topicId.lowercased() == topicId.lowercased()
+        }
         
+        var result = topicWords
         let searchTrimmed = wordSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
         if !searchTrimmed.isEmpty {
             let searchLower = searchTrimmed.lowercased()
             result = result.filter {
                 $0.word.lowercased().contains(searchLower) ||
-                $0.meaning.lowercased().contains(searchLower)
+                $0.meaning.lowercased().contains(searchLower) ||
+                $0.phonetic.lowercased().contains(searchLower)
             }
         }
         
@@ -228,12 +294,11 @@ class AdminViewModel: ObservableObject {
         self.isLoading = true
         self.errorMessage = nil
         
-        // 1. Load Vocabulary Topics (from /topics)
+        // 1. Load Topics (from /topics)
         do {
             self.topics = try await repository.getAllTopics()
         } catch {
-            print("Admin: Failed to load vocabulary topics: \(error.localizedDescription)")
-            self.errorMessage = "Không thể tải danh sách chủ đề từ vựng: \(error.localizedDescription)"
+            print("Admin: Failed to load topics: \(error.localizedDescription)")
         }
         
         // 2. Load Words (from /vocabulary)
@@ -241,6 +306,7 @@ class AdminViewModel: ObservableObject {
             self.words = try await repository.getAllVocabulary()
         } catch {
             print("Admin: Failed to load vocabulary: \(error.localizedDescription)")
+            self.errorMessage = "Không thể tải danh sách từ vựng: \(error.localizedDescription)"
         }
         
         // 3. Load Quiz Topics (from /quizzes)
@@ -250,39 +316,38 @@ class AdminViewModel: ObservableObject {
             print("Admin: Failed to load quiz topics: \(error.localizedDescription)")
         }
         
-        // 4. Load Quizzes
+        // 3. Load Quizzes
         do {
             self.quizzes = try await repository.getAllQuizzes()
         } catch {
             print("Admin: Failed to load quizzes: \(error.localizedDescription)")
         }
         
-        // 5. Load Listening Topics (from /listening_exercises)
+        // 4. Load Listening Topics (from /listening_exercises)
         do {
             self.listeningTopics = try await repository.getAllListeningTopics()
         } catch {
             print("Admin: Failed to load listening topics: \(error.localizedDescription)")
         }
         
-        // 6. Load Listening Exercises
+        // 5. Load Listening Exercises
         do {
             self.listeningExercises = try await repository.getAllListeningExercises()
         } catch {
             print("Admin: Failed to load listening exercises: \(error.localizedDescription)")
         }
         
-        // 7. Load Users (Requires Admin permissions on collection users)
+        // 6. Load Users (Requires Admin permissions on collection users)
         do {
             self.users = try await repository.getAllUsers()
         } catch {
             print("Admin: Failed to load users list: \(error.localizedDescription)")
-            // If this fails (e.g. Permission Denied), show a soft warning but let the admin view topics
             if self.errorMessage == nil {
                 self.errorMessage = "Cảnh báo: Không có quyền truy cập danh sách học viên (Kiểm tra lại Security Rules của bảng users)."
             }
         }
         
-        // 8. Load Notifications History (from /notifications_history)
+        // 7. Load Notifications History (from /notifications_history)
         do {
             self.notifications = try await repository.getAllNotifications()
         } catch {
@@ -366,26 +431,22 @@ class AdminViewModel: ObservableObject {
     }
     
     // MARK: - Topic Operations
-    func saveTopic(id: String?, name: String, description: String, image: String) async {
-        let topicId = id ?? name.lowercased().replacingOccurrences(of: " ", with: "_").trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        // Count how many words are currently in this topic
-        let wordCount = words.filter { $0.topicId == topicId }.count
-        
-        let newTopic = Topic(
+    func saveTopic(id: String, name: String, description: String, image: String) async {
+        let topicId = id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? createTopicSlug(from: name) : id
+        let totalCount = words.filter { $0.topicId.lowercased() == topicId.lowercased() }.count
+        let topic = Topic(
             id: topicId,
             name: name,
             description: description,
             image: image.isEmpty ? "folder.fill" : image,
-            totalWords: wordCount
+            totalWords: totalCount
         )
-        
         do {
-            try await repository.saveTopic(topic: newTopic)
-            if let idx = topics.firstIndex(where: { $0.id == topicId }) {
-                topics[idx] = newTopic
+            try await repository.saveTopic(topic: topic)
+            if let idx = topics.firstIndex(where: { $0.id.lowercased() == topicId.lowercased() }) {
+                topics[idx] = topic
             } else {
-                topics.append(newTopic)
+                topics.append(topic)
             }
         } catch {
             self.errorMessage = error.localizedDescription
@@ -393,30 +454,19 @@ class AdminViewModel: ObservableObject {
     }
     
     func deleteTopic(topicId: String) async {
-        // Safety check: Cannot delete a topic containing vocabulary words
-        let wordCount = words.filter { $0.topicId == topicId }.count
-        guard wordCount == 0 else {
-            self.errorMessage = "Không thể xoá. Chủ đề này hiện đang có \(wordCount) từ vựng."
-            return
-        }
-        
         do {
             try await repository.deleteTopic(topicId: topicId)
-            topics.removeAll(where: { $0.id == topicId })
+            topics.removeAll(where: { $0.id.lowercased() == topicId.lowercased() })
+            words.removeAll(where: { $0.topicId.lowercased() == topicId.lowercased() })
         } catch {
             self.errorMessage = error.localizedDescription
         }
     }
     
     // MARK: - Vocabulary Operations
-    func saveWord(id: String?, word: String, phonetic: String, meaning: String, example: String, image: String, audio: String, topicId: String, level: String) async {
+    func saveWord(id: String?, word: String, phonetic: String, meaning: String, example: String, image: String, audio: String, topicId: String = "", level: String) async {
         let wordId = id ?? "word_\(UUID().uuidString.prefix(8).lowercased())"
-        
-        // Find existing word to check if topicId changed
-        var previousTopicId: String? = nil
-        if let existing = words.first(where: { $0.id == wordId }) {
-            previousTopicId = existing.topicId
-        }
+        let resolvedTopicId = topicId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "general" : topicId.trimmingCharacters(in: .whitespacesAndNewlines)
         
         let newWord = VocabularyWord(
             id: wordId,
@@ -426,7 +476,7 @@ class AdminViewModel: ObservableObject {
             example: example,
             image: image,
             audio: audio,
-            topicId: topicId,
+            topicId: resolvedTopicId,
             level: level
         )
         
@@ -439,50 +489,28 @@ class AdminViewModel: ObservableObject {
             } else {
                 words.append(newWord)
             }
-            
-            // Re-sync new topic count locally
-            if let tIdx = topics.firstIndex(where: { $0.id == topicId }) {
-                topics[tIdx].totalWords = words.filter { $0.topicId == topicId }.count
-            }
-            
-            // Re-sync old topic count locally if changed
-            if let oldId = previousTopicId, oldId != topicId {
-                if let tIdx = topics.firstIndex(where: { $0.id == oldId }) {
-                    topics[tIdx].totalWords = words.filter { $0.topicId == oldId }.count
-                }
-            }
         } catch {
             self.errorMessage = error.localizedDescription
         }
     }
     
-    func saveWordsBatch(words newWords: [VocabularyWord], topicId: String) async {
+    func saveWordsBatch(words newWords: [VocabularyWord], defaultTopicId: String? = nil) async {
         isLoading = true
         do {
-            try await repository.saveWordsBatch(words: newWords, topicId: topicId)
+            try await repository.saveWordsBatch(words: newWords, defaultTopicId: defaultTopicId)
             let newIds = Set(newWords.map(\.id))
             words.removeAll { newIds.contains($0.id) }
             words.append(contentsOf: newWords)
-            
-            let count = words.filter { $0.topicId == topicId }.count
-            if let idx = topics.firstIndex(where: { $0.id == topicId }) {
-                topics[idx].totalWords = count
-            }
         } catch {
             self.errorMessage = "Error saving vocabulary words batch: \(error.localizedDescription)"
         }
         isLoading = false
     }
     
-    func deleteWord(wordId: String, topicId: String) async {
+    func deleteWord(wordId: String, topicId: String? = nil) async {
         do {
             try await repository.deleteWord(wordId: wordId, topicId: topicId)
             words.removeAll(where: { $0.id == wordId })
-            
-            // Re-sync topic counts locally
-            if let tIdx = topics.firstIndex(where: { $0.id == topicId }) {
-                topics[tIdx].totalWords = words.filter { $0.topicId == topicId }.count
-            }
         } catch {
             self.errorMessage = error.localizedDescription
         }
@@ -609,18 +637,16 @@ class AdminViewModel: ObservableObject {
         func getOrCreateTopicSet(id: String, name: String, desc: String, image: String) -> String {
             let finalId = id.isEmpty ? createTopicSlug(from: name.isEmpty ? currentTopicId : name) : id
             if topicSetsDict[finalId] == nil {
-                let existingTopic = topics.first(where: { $0.id == finalId })
-                let finalName = name.isEmpty ? (existingTopic?.name ?? finalId.replacingOccurrences(of: "_", with: " ").capitalized) : name
-                let finalDesc = desc.isEmpty ? (existingTopic?.description ?? "") : desc
-                let finalImg = image.isEmpty ? (existingTopic?.image ?? "folder") : image
-                let isNew = (existingTopic == nil)
+                let finalName = name.isEmpty ? finalId.replacingOccurrences(of: "_", with: " ").capitalized : name
+                let finalDesc = desc
+                let finalImg = image.isEmpty ? "folder" : image
                 
                 topicSetsDict[finalId] = ParsedTopicSet(
                     id: finalId,
                     name: finalName,
                     description: finalDesc,
                     image: finalImg,
-                    isNewTopic: isNew,
+                    isNewTopic: false,
                     words: []
                 )
                 topicSetsOrder.append(finalId)
@@ -771,38 +797,8 @@ class AdminViewModel: ObservableObject {
     
     func commitImportedRecords() async {
         self.isLoading = true
-        var affectedTopicIds: Set<String> = []
         
         for topicSet in parsedTopicSets {
-            let topicId = topicSet.id
-            
-            // 1. Create or update Topic metadata
-            let existingTopic = topics.first(where: { $0.id == topicId })
-            let topicName = topicSet.name.isEmpty ? (existingTopic?.name ?? topicId.capitalized) : topicSet.name
-            let topicDesc = topicSet.description.isEmpty ? (existingTopic?.description ?? "") : topicSet.description
-            let topicImg = topicSet.image.isEmpty ? (existingTopic?.image ?? "folder") : topicSet.image
-            
-            let topicToSave = Topic(
-                id: topicId,
-                name: topicName,
-                description: topicDesc,
-                image: topicImg,
-                totalWords: (existingTopic?.totalWords ?? 0)
-            )
-            
-            do {
-                try await repository.saveTopic(topic: topicToSave)
-                if let tIdx = topics.firstIndex(where: { $0.id == topicId }) {
-                    topics[tIdx] = topicToSave
-                } else {
-                    topics.append(topicToSave)
-                }
-                affectedTopicIds.insert(topicId)
-            } catch {
-                print("Lỗi lưu topic \(topicId): \(error.localizedDescription)")
-            }
-            
-            // 2. Save valid words in this topic
             let validWords = topicSet.words.filter { $0.status == .valid }
             for record in validWords {
                 let wordId = "word_\(UUID().uuidString.prefix(8).lowercased())"
@@ -814,25 +810,16 @@ class AdminViewModel: ObservableObject {
                     example: record.example,
                     image: record.image,
                     audio: record.audio,
-                    topicId: topicId,
+                    topicId: record.topicId,
                     level: record.level
                 )
                 
                 do {
                     try await repository.saveWord(word: newWord)
                     words.append(newWord)
-                    affectedTopicIds.insert(topicId)
                 } catch {
                     print("Import failure for word \(record.word): \(error.localizedDescription)")
                 }
-            }
-        }
-        
-        // 3. Update totalWords on topic models
-        for topicId in affectedTopicIds {
-            let count = words.filter { $0.topicId == topicId }.count
-            if let tIdx = topics.firstIndex(where: { $0.id == topicId }) {
-                topics[tIdx].totalWords = count
             }
         }
         

@@ -12,33 +12,34 @@ class VocabularyService {
     
     private init() {}
     
-    // MARK: - Fetch Topics (Firestore)
-    func fetchTopics() async throws -> [Topic] {
-        do {
-            let snapshot = try await db.collection("topics").getDocuments()
-            return snapshot.documents.compactMap { doc in
-                try? doc.data(as: Topic.self)
-            }
-        } catch {
-            print("Firestore fetch topics failed: \(error.localizedDescription)")
-            return []
-        }
-    }
-    
-    // MARK: - Fetch Words for Topic (Firestore)
-    func fetchWords(for topicId: String) async throws -> [VocabularyWord] {
-        do {
-            let snapshot = try await db.collection("vocabulary")
-                .whereField("topicId", isEqualTo: topicId)
+    // MARK: - Fetch Words (Firestore /vocabulary/{topicId}/words)
+    func fetchWords(for topicId: String = "") async throws -> [VocabularyWord] {
+        let trimmed = topicId.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty && trimmed != "all" {
+            let subSnapshot = try await db.collection("vocabulary")
+                .document(trimmed)
+                .collection("words")
                 .getDocuments()
             
-            return snapshot.documents.compactMap { doc in
-                try? doc.data(as: VocabularyWord.self)
+            if !subSnapshot.documents.isEmpty {
+                return subSnapshot.documents.compactMap { doc -> VocabularyWord? in
+                    let data = doc.data()
+                    guard let word = data["word"] as? String,
+                          let meaning = data["meaning"] as? String else {
+                        return try? doc.data(as: VocabularyWord.self)
+                    }
+                    let id = data["id"] as? String ?? doc.documentID
+                    let phonetic = data["phonetic"] as? String ?? ""
+                    let example = data["example"] as? String ?? ""
+                    let image = data["image"] as? String ?? ""
+                    let audio = data["audio"] as? String ?? ""
+                    let tId = data["topicId"] as? String ?? trimmed
+                    let level = data["level"] as? String ?? "Beginner"
+                    return VocabularyWord(id: id, word: word, phonetic: phonetic, meaning: meaning, example: example, image: image, audio: audio, topicId: tId, level: level)
+                }
             }
-        } catch {
-            print("Firestore fetch words failed: \(error.localizedDescription)")
-            return []
         }
+        return try await fetchAllVocabulary()
     }
     
     // MARK: - Mark Word as Learned
@@ -76,17 +77,86 @@ class VocabularyService {
         }
     }
     
-    // MARK: - Fetch All Vocabulary Words (Firestore)
+    // MARK: - Fetch All Vocabulary Words (Firestore /vocabulary/{topicId}/words)
     func fetchAllVocabulary() async throws -> [VocabularyWord] {
+        var allWords: [VocabularyWord] = []
+        var seenWordIds = Set<String>()
+        
         do {
-            let snapshot = try await db.collection("vocabulary").getDocuments()
-            return snapshot.documents.compactMap { doc in
-                try? doc.data(as: VocabularyWord.self)
+            let topicDocs = try await db.collection("vocabulary").getDocuments()
+            for tDoc in topicDocs.documents {
+                let topicId = tDoc.documentID
+                
+                // 1. Fetch from subcollection /vocabulary/{topicId}/words
+                let wordsSnapshot = try await tDoc.reference.collection("words").getDocuments()
+                for doc in wordsSnapshot.documents {
+                    let data = doc.data()
+                    guard let word = data["word"] as? String,
+                          let meaning = data["meaning"] as? String else {
+                        if let w = try? doc.data(as: VocabularyWord.self) {
+                            if !seenWordIds.contains(w.id) {
+                                seenWordIds.insert(w.id)
+                                allWords.append(w)
+                            }
+                        }
+                        continue
+                    }
+                    let id = data["id"] as? String ?? doc.documentID
+                    let phonetic = data["phonetic"] as? String ?? ""
+                    let example = data["example"] as? String ?? ""
+                    let image = data["image"] as? String ?? ""
+                    let audio = data["audio"] as? String ?? ""
+                    let tId = data["topicId"] as? String ?? topicId
+                    let level = data["level"] as? String ?? "Beginner"
+                    
+                    if !seenWordIds.contains(id) {
+                        seenWordIds.insert(id)
+                        allWords.append(VocabularyWord(
+                            id: id,
+                            word: word,
+                            phonetic: phonetic,
+                            meaning: meaning,
+                            example: example,
+                            image: image,
+                            audio: audio,
+                            topicId: tId,
+                            level: level
+                        ))
+                    }
+                }
+                
+                // 2. Fallback check for legacy flat word documents in /vocabulary
+                let tData = tDoc.data()
+                if let wText = tData["word"] as? String,
+                   let mText = tData["meaning"] as? String {
+                    let id = tDoc.documentID
+                    if !seenWordIds.contains(id) {
+                        seenWordIds.insert(id)
+                        let phonetic = tData["phonetic"] as? String ?? ""
+                        let example = tData["example"] as? String ?? ""
+                        let image = tData["image"] as? String ?? ""
+                        let audio = tData["audio"] as? String ?? ""
+                        let tId = tData["topicId"] as? String ?? "general"
+                        let level = tData["level"] as? String ?? "Beginner"
+                        allWords.append(VocabularyWord(
+                            id: id,
+                            word: wText,
+                            phonetic: phonetic,
+                            meaning: mText,
+                            example: example,
+                            image: image,
+                            audio: audio,
+                            topicId: tId,
+                            level: level
+                        ))
+                    }
+                }
             }
         } catch {
             print("Error fetching all vocabulary words: \(error.localizedDescription)")
-            return []
         }
+        
+        return allWords
     }
     
     // MARK: - Fetch user specific learned word IDs

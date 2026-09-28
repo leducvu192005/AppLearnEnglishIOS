@@ -71,6 +71,17 @@ class AudioService: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         speechSynthesizer.speak(utterance)
     }
     
+    // MARK: - Stop Audio / TTS Playback
+    func stop() {
+        if speechSynthesizer.isSpeaking {
+            speechSynthesizer.stopSpeaking(at: .immediate)
+        }
+        audioPlayer?.pause()
+        audioPlayer = nil
+        isPlaying = false
+        activeWord = nil
+    }
+    
     // MARK: - AVPlayer Notification
     @objc private func playerDidFinishPlaying() {
         DispatchQueue.main.async {

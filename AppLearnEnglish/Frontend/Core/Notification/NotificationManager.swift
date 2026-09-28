@@ -201,15 +201,28 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         print("🗑️ [SRS] Đã hủy lịch ôn tập cho wordId: \(wordId)")
     }
     
-    // MARK: - Schedule Passive Learning Notifications (12 different Oxford words/day)
+    // MARK: - Schedule Passive Learning Notifications (5 different words/day)
     func schedulePassiveLearningNotifications(words: [VocabularyWord]) {
+        let isPassiveEnabled = UserDefaults.standard.object(forKey: "AppLearnEnglish_EnablePassiveLearning") != nil
+            ? UserDefaults.standard.bool(forKey: "AppLearnEnglish_EnablePassiveLearning")
+            : true
+        guard isPassiveEnabled else {
+            // Cancel passive notifications if disabled
+            UNUserNotificationCenter.current().getPendingNotificationRequests { requests in
+                let passiveRequests = requests.filter { $0.identifier.hasPrefix("PassiveLearning_") }
+                let identifiersToCancel = passiveRequests.map { $0.identifier }
+                UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: identifiersToCancel)
+            }
+            return
+        }
+
         UNUserNotificationCenter.current().getPendingNotificationRequests { requests in
             // Check current pending passive notifications
             let passiveRequests = requests.filter { $0.identifier.hasPrefix("PassiveLearning_") }
             
-            // If we already have a healthy number of pending passive notifications (at least 24, which is 2 days),
+            // If we already have a healthy number of pending passive notifications (at least 10, which is 2 days of 5 words/day),
             // we do NOT reschedule them to prevent resetting timers or repetition when opening the app.
-            if passiveRequests.count >= 24 {
+            if passiveRequests.count >= 10 {
                 print("Healthy amount of pending notifications (\(passiveRequests.count)). Skipping rescheduling.")
                 return
             }
@@ -230,13 +243,13 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
                 availableWords = words
             }
             
-            // We want to schedule for 5 days, 12 words per day. Total = 60 words.
-            let targetWords = Array(availableWords.shuffled().prefix(60))
+            // We want to schedule for 5 days, 5 words per day. Total = 25 words.
+            let targetWords = Array(availableWords.shuffled().prefix(25))
             if targetWords.isEmpty {
                 return
             }
             
-            let hours = [8, 9, 10, 11, 13, 14, 15, 16, 17, 19, 20, 21] // 12 designated study hours per day
+            let hours = [9, 12, 15, 18, 21] // 5 golden study hours per day (9:00, 12:00, 15:00, 18:00, 21:00)
             let calendar = Calendar.current
             let now = Date()
             
@@ -304,7 +317,7 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
             }
             
             UserDefaults.standard.set(Array(notifiedIds), forKey: notifiedIdsKey)
-            print("Successfully scheduled \(scheduledCount) passive notifications over the next 5 days.")
+            print("Successfully scheduled \(scheduledCount) passive notifications (5 words/day) over the next 5 days.")
         }
     }
     
@@ -322,6 +335,9 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let userInfo = response.notification.request.content.userInfo
+        let notifId = response.notification.request.identifier
+        DeliveryManager.shared.recordOpened(notificationId: notifId)
+        
         // 1. Handle Local Word or SRS Review payload
         if let wordId = userInfo["wordId"] as? String,
            let word = userInfo["word"] as? String,

@@ -119,117 +119,288 @@ class AdminFirestoreService {
         ])
     }
     
-    // MARK: - 1. VOCABULARY & TOPICS (/topics and /vocabulary)
-    func fetchAllTopics() async throws -> [Topic] {
-        let snapshot = try await db.collection("topics").getDocuments()
-        return snapshot.documents.compactMap { doc in
-            try? doc.data(as: Topic.self)
+    // MARK: - 1. VOCABULARY & TOPICS (/vocabulary/{topicId} and /vocabulary/{topicId}/words/{wordId})
+    func fetchTopics() async throws -> [Topic] {
+        var topicsMap: [String: Topic] = [:]
+        
+        // 1. Fetch topics directly from /vocabulary documents
+        do {
+            let snapshot = try await db.collection("vocabulary").getDocuments()
+            for doc in snapshot.documents {
+                let data = doc.data()
+                let topicId = doc.documentID
+                
+                // Ignore if it's a legacy flat word document that has "meaning" and no "name"
+                if data["meaning"] != nil && data["name"] == nil {
+                    continue
+                }
+                
+                let name = data["name"] as? String ?? topicId.capitalized
+                let desc = data["description"] as? String ?? ""
+                let image = data["image"] as? String ?? "folder.fill"
+                let totalWords = data["totalWords"] as? Int ?? 0
+                
+                topicsMap[topicId.lowercased()] = Topic(
+                    id: topicId,
+                    name: name,
+                    description: desc,
+                    image: image,
+                    totalWords: totalWords
+                )
+            }
+        } catch {
+            print("Error fetching topics from /vocabulary: \(error)")
         }
+        
+        // 2. Backward compatibility: also check legacy /topics collection if any
+        do {
+            let legacySnapshot = try await db.collection("topics").getDocuments()
+            for doc in legacySnapshot.documents {
+                let data = doc.data()
+                let topicId = doc.documentID
+                if topicsMap[topicId.lowercased()] == nil {
+                    let name = data["name"] as? String ?? topicId.capitalized
+                    let desc = data["description"] as? String ?? ""
+                    let image = data["image"] as? String ?? "folder.fill"
+                    let totalWords = data["totalWords"] as? Int ?? 0
+                    topicsMap[topicId.lowercased()] = Topic(
+                        id: topicId,
+                        name: name,
+                        description: desc,
+                        image: image,
+                        totalWords: totalWords
+                    )
+                }
+            }
+        } catch {
+            // Ignore legacy fetch error
+        }
+        
+        return Array(topicsMap.values)
     }
     
     func saveTopic(topic: Topic) async throws {
-        let docRef = db.collection("topics").document(topic.id)
-        try docRef.setData(from: topic, merge: true)
+        let topicDocRef = db.collection("vocabulary").document(topic.id)
+        try await topicDocRef.setData([
+            "id": topic.id,
+            "topicId": topic.id,
+            "name": topic.name,
+            "description": topic.description,
+            "image": topic.image,
+            "totalWords": topic.totalWords,
+            "updatedAt": FieldValue.serverTimestamp()
+        ], merge: true)
     }
     
     func deleteTopic(topicId: String) async throws {
-        // Delete the vocabulary topic document
-        try await db.collection("topics").document(topicId).delete()
+        let topicDocRef = db.collection("vocabulary").document(topicId)
         
-        // Delete all vocabulary words associated with this topic
-        let wordsSnapshot = try await db.collection("vocabulary")
-            .whereField("topicId", isEqualTo: topicId)
-            .getDocuments()
-        
+        // 1. Delete all words in subcollection /vocabulary/{topicId}/words
+        let wordsSnapshot = try await topicDocRef.collection("words").getDocuments()
         let batch = db.batch()
         for doc in wordsSnapshot.documents {
             batch.deleteDocument(doc.reference)
         }
         try await batch.commit()
+        
+        // 2. Delete the topic document /vocabulary/{topicId}
+        try await topicDocRef.delete()
+        
+        // 3. Delete from legacy /topics collection if present
+        try? await db.collection("topics").document(topicId).delete()
     }
     
     func fetchAllVocabulary() async throws -> [VocabularyWord] {
-        let snapshot = try await db.collection("vocabulary").getDocuments()
-        return snapshot.documents.compactMap { doc in
-            try? doc.data(as: VocabularyWord.self)
+        var allWords: [VocabularyWord] = []
+        var seenWordIds = Set<String>()
+        
+        do {
+            let topicDocs = try await db.collection("vocabulary").getDocuments()
+            for tDoc in topicDocs.documents {
+                let topicId = tDoc.documentID
+                
+                // 1. Fetch from subcollection /vocabulary/{topicId}/words
+                let wordsSnapshot = try await tDoc.reference.collection("words").getDocuments()
+                for doc in wordsSnapshot.documents {
+                    let data = doc.data()
+                    guard let word = data["word"] as? String,
+                          let meaning = data["meaning"] as? String else {
+                        if let w = try? doc.data(as: VocabularyWord.self) {
+                            if !seenWordIds.contains(w.id) {
+                                seenWordIds.insert(w.id)
+                                allWords.append(w)
+                            }
+                        }
+                        continue
+                    }
+                    let id = data["id"] as? String ?? doc.documentID
+                    let phonetic = data["phonetic"] as? String ?? ""
+                    let example = data["example"] as? String ?? ""
+                    let image = data["image"] as? String ?? ""
+                    let audio = data["audio"] as? String ?? ""
+                    let tId = data["topicId"] as? String ?? topicId
+                    let level = data["level"] as? String ?? "Beginner"
+                    
+                    if !seenWordIds.contains(id) {
+                        seenWordIds.insert(id)
+                        allWords.append(VocabularyWord(
+                            id: id,
+                            word: word,
+                            phonetic: phonetic,
+                            meaning: meaning,
+                            example: example,
+                            image: image,
+                            audio: audio,
+                            topicId: tId,
+                            level: level
+                        ))
+                    }
+                }
+                
+                // 2. Check if tDoc itself is a legacy flat word document (has "word" and "meaning")
+                let tData = tDoc.data()
+                if let wText = tData["word"] as? String,
+                   let mText = tData["meaning"] as? String {
+                    let id = tDoc.documentID
+                    if !seenWordIds.contains(id) {
+                        seenWordIds.insert(id)
+                        let phonetic = tData["phonetic"] as? String ?? ""
+                        let example = tData["example"] as? String ?? ""
+                        let image = tData["image"] as? String ?? ""
+                        let audio = tData["audio"] as? String ?? ""
+                        let tId = tData["topicId"] as? String ?? "general"
+                        let level = tData["level"] as? String ?? "Beginner"
+                        allWords.append(VocabularyWord(
+                            id: id,
+                            word: wText,
+                            phonetic: phonetic,
+                            meaning: mText,
+                            example: example,
+                            image: image,
+                            audio: audio,
+                            topicId: tId,
+                            level: level
+                        ))
+                    }
+                }
+            }
+        } catch {
+            print("Error fetching all vocabulary: \(error)")
         }
+        
+        return allWords
     }
     
     func saveWord(word: VocabularyWord) async throws {
-        let docRef = db.collection("vocabulary").document(word.id)
+        let topicId = word.topicId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "general" : word.topicId
+        let topicDocRef = db.collection("vocabulary").document(topicId)
         
-        var oldTopicId: String? = nil
-        if let existingDoc = try? await docRef.getDocument(), existingDoc.exists {
-            oldTopicId = existingDoc.data()?["topicId"] as? String
-        }
-        
-        try docRef.setData(from: word, merge: true)
-        
-        // Update the new topic's totalWords count
-        let newTopicId = word.topicId
-        let newCountSnapshot = try await db.collection("vocabulary")
-            .whereField("topicId", isEqualTo: newTopicId)
-            .getDocuments()
-        try await db.collection("topics").document(newTopicId).updateData([
-            "totalWords": newCountSnapshot.documents.count
-        ])
-        
-        if let oldId = oldTopicId, oldId != newTopicId {
-            let oldCountSnapshot = try await db.collection("vocabulary")
-                .whereField("topicId", isEqualTo: oldId)
-                .getDocuments()
-            try await db.collection("topics").document(oldId).updateData([
-                "totalWords": oldCountSnapshot.documents.count
-            ])
-        }
-    }
-    
-    func deleteWord(wordId: String, topicId: String) async throws {
-        try await db.collection("vocabulary").document(wordId).delete()
-        
-        let wordsInTopicSnapshot = try await db.collection("vocabulary")
-            .whereField("topicId", isEqualTo: topicId)
-            .getDocuments()
-        
-        let totalCount = wordsInTopicSnapshot.documents.count
-        try await db.collection("topics").document(topicId).updateData([
-            "totalWords": totalCount
-        ])
-    }
-    
-    func saveWordsBatch(words: [VocabularyWord], topicId: String) async throws {
-        let resolvedTopicId = topicId.isEmpty ? "general" : topicId
-        let topicDocRef = db.collection("topics").document(resolvedTopicId)
-        
+        // 1. Ensure Topic Document in /vocabulary/{topicId} exists
         try await topicDocRef.setData([
-            "id": resolvedTopicId,
+            "id": topicId,
+            "topicId": topicId,
             "updatedAt": FieldValue.serverTimestamp()
         ], merge: true)
         
-        let batch = db.batch()
-        for word in words {
-            let docRef = db.collection("vocabulary").document(word.id)
-            let dict: [String: Any] = [
-                "id": word.id,
-                "word": word.word,
-                "phonetic": word.phonetic,
-                "meaning": word.meaning,
-                "example": word.example,
-                "image": word.image,
-                "audio": word.audio,
-                "topicId": resolvedTopicId,
-                "level": word.level
-            ]
-            batch.setData(dict, forDocument: docRef, merge: true)
-        }
-        try await batch.commit()
+        // 2. Save individual word inside subcollection /vocabulary/{topicId}/words/{word.id}
+        let wordDocRef = topicDocRef.collection("words").document(word.id)
+        let dict: [String: Any] = [
+            "id": word.id,
+            "word": word.word,
+            "phonetic": word.phonetic,
+            "meaning": word.meaning,
+            "example": word.example,
+            "image": word.image,
+            "audio": word.audio,
+            "topicId": topicId,
+            "level": word.level,
+            "updatedAt": FieldValue.serverTimestamp()
+        ]
+        try await wordDocRef.setData(dict, merge: true)
         
-        let countSnapshot = try await db.collection("vocabulary")
-            .whereField("topicId", isEqualTo: resolvedTopicId)
-            .getDocuments()
-        try await topicDocRef.updateData([
+        // 3. Update totalWords counter on /vocabulary/{topicId}
+        let countSnapshot = try await topicDocRef.collection("words").getDocuments()
+        try await topicDocRef.setData([
             "totalWords": countSnapshot.documents.count
-        ])
+        ], merge: true)
+        
+        // Cleanup legacy flat word if any
+        try? await db.collection("vocabulary").document(word.id).delete()
+    }
+    
+    func saveWordsBatch(words: [VocabularyWord], defaultTopicId: String? = nil) async throws {
+        guard !words.isEmpty else { return }
+        
+        // Group words by topicId
+        var wordsByTopic: [String: [VocabularyWord]] = [:]
+        for w in words {
+            var tid = w.topicId.trimmingCharacters(in: .whitespacesAndNewlines)
+            if tid.isEmpty {
+                tid = defaultTopicId?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? defaultTopicId! : "general"
+            }
+            wordsByTopic[tid, default: []].append(w)
+        }
+        
+        for (topicId, topicWords) in wordsByTopic {
+            let topicDocRef = db.collection("vocabulary").document(topicId)
+            
+            // 1. Ensure Topic Document exists
+            try await topicDocRef.setData([
+                "id": topicId,
+                "topicId": topicId,
+                "updatedAt": FieldValue.serverTimestamp()
+            ], merge: true)
+            
+            // 2. Batch write all words in /vocabulary/{topicId}/words
+            let batch = db.batch()
+            for word in topicWords {
+                let wRef = topicDocRef.collection("words").document(word.id)
+                let dict: [String: Any] = [
+                    "id": word.id,
+                    "word": word.word,
+                    "phonetic": word.phonetic,
+                    "meaning": word.meaning,
+                    "example": word.example,
+                    "image": word.image,
+                    "audio": word.audio,
+                    "topicId": topicId,
+                    "level": word.level,
+                    "updatedAt": FieldValue.serverTimestamp()
+                ]
+                batch.setData(dict, forDocument: wRef, merge: true)
+            }
+            try await batch.commit()
+            
+            // 3. Update total words counter
+            let countSnapshot = try await topicDocRef.collection("words").getDocuments()
+            try await topicDocRef.setData([
+                "totalWords": countSnapshot.documents.count
+            ], merge: true)
+        }
+    }
+    
+    func deleteWord(wordId: String, topicId: String? = nil) async throws {
+        if let tId = topicId, !tId.isEmpty {
+            let topicDocRef = db.collection("vocabulary").document(tId)
+            try await topicDocRef.collection("words").document(wordId).delete()
+            
+            let countSnapshot = try await topicDocRef.collection("words").getDocuments()
+            try await topicDocRef.setData([
+                "totalWords": countSnapshot.documents.count
+            ], merge: true)
+        } else {
+            let topicDocs = try await db.collection("vocabulary").getDocuments()
+            for tDoc in topicDocs.documents {
+                try? await tDoc.reference.collection("words").document(wordId).delete()
+                let countSnapshot = try? await tDoc.reference.collection("words").getDocuments()
+                if let count = countSnapshot?.documents.count {
+                    try? await tDoc.reference.setData(["totalWords": count], merge: true)
+                }
+            }
+        }
+        
+        // Also clean up any legacy root /vocabulary/{wordId} doc
+        try? await db.collection("vocabulary").document(wordId).delete()
     }
     
     // MARK: - 2. QUIZZES SEPARATE COLLECTION (/quizzes and /quizzes/{topicId}/questions)

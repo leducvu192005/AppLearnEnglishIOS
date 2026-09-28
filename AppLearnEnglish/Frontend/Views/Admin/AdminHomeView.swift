@@ -33,9 +33,9 @@ struct AdminHomeView: View {
                 AdminTheme.appBackground
                     .ignoresSafeArea()
                 
-                if viewModel.isLoading && viewModel.topics.isEmpty {
+                if viewModel.isLoading && viewModel.words.isEmpty {
                     AdminTableSkeletonView()
-                } else if let err = viewModel.errorMessage, viewModel.topics.isEmpty {
+                } else if let err = viewModel.errorMessage, viewModel.words.isEmpty {
                     AdminErrorView(errorMsg: err) {
                         Task { await viewModel.loadAllData() }
                     }
@@ -79,16 +79,17 @@ struct AdminHomeView: View {
             await viewModel.loadAllData()
         }
         .sheet(isPresented: $showingNewTopicSheet) {
-            TopicFormSheet(
+            WordFormSheet(
                 viewModel: viewModel,
-                editingTopic: nil,
+                defaultTopicId: "",
+                editingWord: nil,
                 isPresented: $showingNewTopicSheet
             )
         }
         .sheet(isPresented: $showingVocabularyImportSheet) {
             VocabularyImportSheet(
                 viewModel: viewModel,
-                topicId: viewModel.topics.first?.id ?? "travel",
+                topicId: "",
                 isPresented: $showingVocabularyImportSheet
             )
         }
