@@ -13,14 +13,14 @@ protocol AdminRepositoryProtocol {
     func toggleUserActiveStatus(uid: String, isActive: Bool) async throws
     func updateUserXPAndLevel(uid: String, xp: Int, level: String) async throws
     
-    // Vocabulary Domain (/topics & /vocabulary)
+    // Vocabulary & Topics Domain (/vocabulary/{topicId} and /vocabulary/{topicId}/words/{wordId})
     func getAllTopics() async throws -> [Topic]
     func saveTopic(topic: Topic) async throws
     func deleteTopic(topicId: String) async throws
     func getAllVocabulary() async throws -> [VocabularyWord]
     func saveWord(word: VocabularyWord) async throws
-    func saveWordsBatch(words: [VocabularyWord], topicId: String) async throws
-    func deleteWord(wordId: String, topicId: String) async throws
+    func saveWordsBatch(words: [VocabularyWord], defaultTopicId: String?) async throws
+    func deleteWord(wordId: String, topicId: String?) async throws
     
     // Quiz Domain (/quizzes)
     func getAllQuizTopics() async throws -> [Topic]
@@ -39,6 +39,11 @@ protocol AdminRepositoryProtocol {
     func deleteListeningTopic(topicId: String) async throws
     func saveListeningExercisesBatch(exercises: [ListeningExercise], topicId: String) async throws
     func deleteListeningExercise(exerciseId: String, topicId: String?) async throws
+    
+    // Notification Domain (/notifications_history)
+    func getAllNotifications() async throws -> [AdminNotification]
+    func saveNotification(notification: AdminNotification) async throws
+    func deleteNotification(id: String) async throws
 }
 
 class AdminRepository: AdminRepositoryProtocol {
@@ -68,9 +73,9 @@ class AdminRepository: AdminRepositoryProtocol {
         try await adminFirestore.updateUserXPAndLevel(uid: uid, xp: xp, level: level)
     }
     
-    // Vocabulary Domain
+    // Vocabulary & Topics Domain
     func getAllTopics() async throws -> [Topic] {
-        try await adminFirestore.fetchAllTopics()
+        try await adminFirestore.fetchTopics()
     }
     
     func saveTopic(topic: Topic) async throws {
@@ -89,11 +94,11 @@ class AdminRepository: AdminRepositoryProtocol {
         try await adminFirestore.saveWord(word: word)
     }
     
-    func saveWordsBatch(words: [VocabularyWord], topicId: String) async throws {
-        try await adminFirestore.saveWordsBatch(words: words, topicId: topicId)
+    func saveWordsBatch(words: [VocabularyWord], defaultTopicId: String? = nil) async throws {
+        try await adminFirestore.saveWordsBatch(words: words, defaultTopicId: defaultTopicId)
     }
     
-    func deleteWord(wordId: String, topicId: String) async throws {
+    func deleteWord(wordId: String, topicId: String? = nil) async throws {
         try await adminFirestore.deleteWord(wordId: wordId, topicId: topicId)
     }
     
@@ -153,5 +158,18 @@ class AdminRepository: AdminRepositoryProtocol {
     
     func deleteListeningExercise(exerciseId: String, topicId: String? = nil) async throws {
         try await adminFirestore.deleteListeningExercise(exerciseId: exerciseId, topicId: topicId)
+    }
+    
+    // Notification Domain
+    func getAllNotifications() async throws -> [AdminNotification] {
+        try await adminFirestore.fetchAllNotifications()
+    }
+    
+    func saveNotification(notification: AdminNotification) async throws {
+        try await adminFirestore.saveNotification(notification: notification)
+    }
+    
+    func deleteNotification(id: String) async throws {
+        try await adminFirestore.deleteNotification(id: id)
     }
 }

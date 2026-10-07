@@ -8,8 +8,12 @@ import UserNotifications
 
 struct AdminNotificationsView: View {
     @ObservedObject var viewModel: AdminViewModel
+    @ObservedObject private var automationEngine = AutomationEngine.shared
+    @ObservedObject private var journeyEngine = JourneyEngine.shared
+    @ObservedObject private var deliveryManager = DeliveryManager.shared
+    @ObservedObject private var eventEngine = EventEngine.shared
     
-    // Sub-tab selection: 0 = Soạn tin, 1 = Lịch sử, 2 = Mẫu sẵn, 3 = Thiết bị FCM
+    // Sub-tab selection: 0 = Soạn tin, 1 = Lịch sử, 2 = Tự động hóa, 3 = Hành trình Drip, 4 = Phễu Chuyển đổi, 5 = Nhật ký Phân phối
     @State private var selectedSubTab = 0
     
     // Compose Form States
@@ -133,9 +137,13 @@ struct AdminNotificationsView: View {
                 case 1:
                     historySection
                 case 2:
-                    templatesSection
+                    automationRulesSection
                 case 3:
-                    devicesAndTokensSection
+                    journeyWorkflowsSection
+                case 4:
+                    conversionFunnelSection
+                case 5:
+                    deliveryLogsSection
                 default:
                     composeAndPreviewSection
                 }
@@ -301,11 +309,13 @@ struct AdminNotificationsView: View {
     
     // MARK: - 3. SUB-TABS BAR
     private var subTabsBar: some View {
-        HStack(spacing: 8) {
-            subTabButton(index: 0, title: "Soạn & Phát Thông Báo", icon: "paperplane.fill")
-            subTabButton(index: 1, title: "Lịch Sử Chiến Dịch (\(viewModel.notifications.count))", icon: "clock.arrow.circlepath")
-            subTabButton(index: 2, title: "Mẫu Sẵn & Tự Động (\(defaultTemplates.count))", icon: "sparkles")
-            subTabButton(index: 3, title: "Thiết Bị & FCM Tokens (\(viewModel.users.count))", icon: "person.badge.shield.checkmark.fill")
+        HStack(spacing: 6) {
+            subTabButton(index: 0, title: "Soạn Tin", icon: "paperplane.fill")
+            subTabButton(index: 1, title: "Lịch Sử (\(viewModel.notifications.count))", icon: "clock.arrow.circlepath")
+            subTabButton(index: 2, title: "Tự Động Hóa (\(automationEngine.rules.count))", icon: "cpu.fill")
+            subTabButton(index: 3, title: "Hành Trình Drip (\(journeyEngine.workflows.count))", icon: "point.filled.topleft.down.curvedto.point.bottomright.up")
+            subTabButton(index: 4, title: "Phễu Chuyển Đổi", icon: "chart.bar.xaxis")
+            subTabButton(index: 5, title: "Nhật Ký & Tokens (\(deliveryManager.deliveryLogs.count))", icon: "list.bullet.rectangle.portrait.fill")
             Spacer()
         }
         .padding(4)
@@ -442,11 +452,19 @@ struct AdminNotificationsView: View {
                             Text("Chèn thẻ:")
                                 .font(.system(size: 9))
                                 .foregroundColor(AdminTheme.textMuted)
-                            Button("{user_name}") { notifTitle += " {user_name}" }
+                            Button("{{user_name}}") { notifTitle += " {{user_name}}" }
                                 .buttonStyle(PlainButtonStyle())
                                 .font(.system(size: 9, weight: .bold))
                                 .foregroundColor(AdminTheme.primary)
-                            Button("{streak}") { notifTitle += " {streak}" }
+                            Button("{{streak_days}}") { notifTitle += " {{streak_days}}" }
+                                .buttonStyle(PlainButtonStyle())
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundColor(AdminTheme.primary)
+                            Button("{{quiz_score}}") { notifTitle += " {{quiz_score}}" }
+                                .buttonStyle(PlainButtonStyle())
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundColor(AdminTheme.primary)
+                            Button("{{vocabulary_count}}") { notifTitle += " {{vocabulary_count}}" }
                                 .buttonStyle(PlainButtonStyle())
                                 .font(.system(size: 9, weight: .bold))
                                 .foregroundColor(AdminTheme.primary)
@@ -896,64 +914,95 @@ struct AdminNotificationsView: View {
         return list
     }
     
-    // MARK: - 6. TAB 2: MẪU THÔNG BÁO SẴN (TEMPLATES)
-    private var templatesSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("MẪU THÔNG BÁO TỐI ƯU RETENTION CHO HỌC VIÊN")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundColor(AdminTheme.textSecondary)
-                .tracking(0.5)
+    // MARK: - 6. TAB 2: QUY TẮC TỰ ĐỘNG HÓA (AUTOMATION RULES)
+    private var automationRulesSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("QUY TẮC TỰ ĐỘNG HÓA SỰ KIỆN (AUTOMATION ENGINE)")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(AdminTheme.textSecondary)
+                    Text("Tự động gửi thông báo cá nhân hóa khi người dùng kích hoạt sự kiện học tập.")
+                        .font(.system(size: 12))
+                        .foregroundColor(AdminTheme.textMuted)
+                }
+                Spacer()
+                
+                Button(action: {
+                    // Quick test event trigger
+                    EventEngine.shared.track(.quizFailed, properties: ["quiz_score": "45", "user_name": "Minh Anh"])
+                    toastMessage = "🔥 Đã phát sinh sự kiện mẫu (quiz_failed)! Kiểm tra quy tắc tự động xử lý."
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "bolt.fill")
+                        Text("Mô phỏng Event Test")
+                    }
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(AdminTheme.primary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(AdminTheme.primary.opacity(0.12))
+                    .cornerRadius(6)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
             
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
-                ForEach(defaultTemplates) { tpl in
+            VStack(spacing: 12) {
+                ForEach(automationEngine.rules) { rule in
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(categoryColor(for: tpl.category).opacity(0.15))
-                                    .frame(width: 32, height: 32)
-                                Image(systemName: tpl.icon)
-                                    .font(.system(size: 14, weight: .bold))
-                                    .foregroundColor(categoryColor(for: tpl.category))
+                            HStack(spacing: 6) {
+                                Image(systemName: rule.triggerEvent.icon)
+                                    .foregroundColor(categoryColor(for: rule.category))
+                                Text("WHEN: \(rule.triggerEvent.displayName)")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(AdminTheme.textPrimary)
                             }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(AdminTheme.surfaceHover)
+                            .cornerRadius(6)
                             
-                            Text(categoryLabel(for: tpl.category))
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(categoryColor(for: tpl.category))
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(categoryColor(for: tpl.category).opacity(0.1))
-                                .cornerRadius(4)
+                            if let field = rule.conditionField, let val = rule.conditionValue {
+                                Text("VÀ (\(field) \(rule.conditionOperator.rawValue) \(val))")
+                                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                    .foregroundColor(Color(hex: "F59E0B"))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color(hex: "F59E0B").opacity(0.1))
+                                    .cornerRadius(6)
+                            }
                             
                             Spacer()
                             
-                            Button(action: {
-                                applyTemplate(tpl)
-                            }) {
-                                HStack(spacing: 4) {
-                                    Text("Sử dụng mẫu này")
-                                    Image(systemName: "arrow.right")
-                                }
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(AdminTheme.primary)
-                            }
-                            .buttonStyle(PlainButtonStyle())
+                            Text("Đã kích hoạt: \(rule.executionCount) lần")
+                                .font(.system(size: 11))
+                                .foregroundColor(AdminTheme.textMuted)
+                            
+                            Toggle("", isOn: Binding(
+                                get: { rule.isActive },
+                                set: { _ in automationEngine.toggleRule(id: rule.id) }
+                            ))
+                            .labelsHidden()
+                            .scaleEffect(0.8)
                         }
                         
-                        Text(tpl.title)
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(AdminTheme.textPrimary)
-                            .lineLimit(1)
-                        
-                        Text(tpl.body)
-                            .font(.system(size: 12))
-                            .foregroundColor(AdminTheme.textSecondary)
-                            .lineLimit(2)
-                        
-                        Text("💡 \(tpl.description)")
-                            .font(.system(size: 10))
-                            .foregroundColor(AdminTheme.textMuted)
-                            .lineLimit(1)
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 6) {
+                                Text("THEN:")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(AdminTheme.success)
+                                Text(rule.notificationTitle)
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundColor(AdminTheme.textPrimary)
+                            }
+                            Text(rule.notificationBody)
+                                .font(.system(size: 12))
+                                .foregroundColor(AdminTheme.textSecondary)
+                        }
+                        .padding(10)
+                        .background(AdminTheme.surfaceHover)
+                        .cornerRadius(8)
                     }
                     .padding(14)
                     .background(AdminTheme.surface)
@@ -961,6 +1010,280 @@ struct AdminNotificationsView: View {
                     .cornerRadius(10)
                 }
             }
+        }
+    }
+    
+    // MARK: - 7. TAB 3: HÀNH TRÌNH DRIP (JOURNEY WORKFLOWS)
+    private var journeyWorkflowsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("KỊCH BẢN HÀNH TRÌNH TỰ ĐỘNG (LIFECYCLE DRIP WORKFLOWS)")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(AdminTheme.textSecondary)
+                Text("Chuỗi kịch bản phân phối thông báo nhiều bước (Multi-step Nodes) theo thời gian.")
+                    .font(.system(size: 12))
+                    .foregroundColor(AdminTheme.textMuted)
+            }
+            
+            ForEach(journeyEngine.workflows) { workflow in
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(workflow.name)
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundColor(AdminTheme.textPrimary)
+                            Text(workflow.description)
+                                .font(.system(size: 12))
+                                .foregroundColor(AdminTheme.textSecondary)
+                        }
+                        Spacer()
+                        
+                        HStack(spacing: 12) {
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text("Tham gia: \(workflow.enrolledUsersCount)")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundColor(AdminTheme.primary)
+                                Text("Hoàn thành: \(workflow.completedUsersCount)")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundColor(AdminTheme.success)
+                            }
+                            
+                            Toggle("", isOn: Binding(
+                                get: { workflow.isActive },
+                                set: { _ in journeyEngine.toggleWorkflow(id: workflow.id) }
+                            ))
+                            .labelsHidden()
+                            .scaleEffect(0.8)
+                        }
+                    }
+                    
+                    Divider().background(AdminTheme.border)
+                    
+                    // Node progression pipeline
+                    HStack(alignment: .top, spacing: 12) {
+                        ForEach(workflow.nodes) { node in
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    ZStack {
+                                        Circle().fill(AdminTheme.primary.opacity(0.15)).frame(width: 24, height: 24)
+                                        Text("\(node.stepIndex)")
+                                            .font(.system(size: 11, weight: .bold))
+                                            .foregroundColor(AdminTheme.primary)
+                                    }
+                                    Text(node.title)
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundColor(AdminTheme.textPrimary)
+                                }
+                                
+                                Text(node.notificationTitle)
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundColor(AdminTheme.textSecondary)
+                                    .lineLimit(2)
+                            }
+                            .padding(10)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(AdminTheme.surfaceHover)
+                            .cornerRadius(8)
+                            
+                            if node.stepIndex < workflow.nodes.count {
+                                Image(systemName: "arrow.right")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(AdminTheme.textMuted)
+                                    .padding(.top, 16)
+                            }
+                        }
+                    }
+                }
+                .padding(16)
+                .background(AdminTheme.surface)
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(AdminTheme.border, lineWidth: 1))
+                .cornerRadius(10)
+            }
+        }
+    }
+    
+    // MARK: - 8. TAB 4: PHỄU CHUYỂN ĐỔI (CONVERSION FUNNEL)
+    private var conversionFunnelSection: some View {
+        let m = deliveryManager.conversionMetrics
+        return VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("PHÂN TÍCH PHỄU CHUYỂN ĐỔI (FULL-FUNNEL CONVERSION ATTRIBUTION)")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(AdminTheme.textSecondary)
+                Text("Đo lường hiệu quả thực tế từ lúc thông báo gửi đi đến khi học viên hoàn thành bài học.")
+                    .font(.system(size: 12))
+                    .foregroundColor(AdminTheme.textMuted)
+            }
+            
+            // Funnel Step Cards
+            HStack(spacing: 12) {
+                funnelCard(step: "1. ĐÃ PHÁT (SENT)", count: m.totalSent, rate: "100%", icon: "paperplane.fill", color: Color(hex: "6366F1"))
+                funnelCard(step: "2. ĐÃ TỚI MÁY", count: m.totalDelivered, rate: "\(Int(m.deliveryRate * 100))%", icon: "checkmark.circle.fill", color: Color(hex: "10B981"))
+                funnelCard(step: "3. ĐÃ NHẤP MỞ", count: m.totalOpened, rate: "\(Int(m.openRate * 100))%", icon: "envelope.open.fill", color: Color(hex: "F59E0B"))
+                funnelCard(step: "4. CHẠM DEEP LINK", count: m.totalDeepLinkClicked, rate: "\(Int(m.clickThroughRate * 100))%", icon: "link", color: Color(hex: "06B6D4"))
+                funnelCard(step: "5. BẮT ĐẦU BÀI HỌC", count: m.totalLessonStarted, rate: "\(m.totalOpened > 0 ? Int(Double(m.totalLessonStarted)/Double(m.totalOpened)*100) : 0)%", icon: "play.circle.fill", color: Color(hex: "EC4899"))
+                funnelCard(step: "6. HOÀN THÀNH BÀI", count: m.totalLessonCompleted, rate: "\(Int(m.completionConversionRate * 100))%", icon: "trophy.fill", color: Color(hex: "8B5CF6"))
+            }
+            
+            // Visual Funnel Progress Bar
+            VStack(alignment: .leading, spacing: 8) {
+                Text("TIẾN TRÌNH RƠI RỤNG QUA CÁC BƯỚC (FUNNEL DROPOFF)")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(AdminTheme.textSecondary)
+                
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 6).fill(AdminTheme.surfaceHover).frame(height: 20)
+                        
+                        let base = max(m.totalSent, 1)
+                        let wDelivered = geo.size.width * CGFloat(m.totalDelivered) / CGFloat(base)
+                        let wOpened = geo.size.width * CGFloat(m.totalOpened) / CGFloat(base)
+                        let wCompleted = geo.size.width * CGFloat(m.totalLessonCompleted) / CGFloat(base)
+                        
+                        RoundedRectangle(cornerRadius: 6).fill(Color(hex: "6366F1").opacity(0.3)).frame(width: geo.size.width, height: 20)
+                        RoundedRectangle(cornerRadius: 6).fill(Color(hex: "10B981").opacity(0.5)).frame(width: wDelivered, height: 20)
+                        RoundedRectangle(cornerRadius: 6).fill(Color(hex: "F59E0B")).frame(width: wOpened, height: 20)
+                        RoundedRectangle(cornerRadius: 6).fill(Color(hex: "8B5CF6")).frame(width: wCompleted, height: 20)
+                    }
+                }
+                .frame(height: 20)
+                
+                HStack(spacing: 20) {
+                    HStack(spacing: 4) { Circle().fill(Color(hex: "6366F1")).frame(width: 8, height: 8); Text("Phát").font(.system(size: 10)) }
+                    HStack(spacing: 4) { Circle().fill(Color(hex: "10B981")).frame(width: 8, height: 8); Text("Đến máy").font(.system(size: 10)) }
+                    HStack(spacing: 4) { Circle().fill(Color(hex: "F59E0B")).frame(width: 8, height: 8); Text("Nhấp mở (CTR)").font(.system(size: 10)) }
+                    HStack(spacing: 4) { Circle().fill(Color(hex: "8B5CF6")).frame(width: 8, height: 8); Text("Hoàn thành bài").font(.system(size: 10)) }
+                }
+                .foregroundColor(AdminTheme.textMuted)
+            }
+            .padding(16)
+            .background(AdminTheme.surface)
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(AdminTheme.border, lineWidth: 1))
+            .cornerRadius(10)
+        }
+    }
+    
+    private func funnelCard(step: String, count: Int, rate: String, icon: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Image(systemName: icon).font(.system(size: 11, weight: .bold)).foregroundColor(color)
+                Spacer()
+                Text(rate).font(.system(size: 10, weight: .bold)).foregroundColor(color)
+            }
+            Text("\(count)").font(.system(size: 18, weight: .bold, design: .rounded)).foregroundColor(AdminTheme.textPrimary)
+            Text(step).font(.system(size: 9, weight: .semibold)).foregroundColor(AdminTheme.textMuted).lineLimit(1)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AdminTheme.surface)
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(AdminTheme.border, lineWidth: 1))
+        .cornerRadius(8)
+    }
+    
+    // MARK: - 9. TAB 5: NHẬT KÝ PHÂN PHỐI (DELIVERY LOGS & TOKENS)
+    private var deliveryLogsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("NHẬT KÝ PHÂN PHỐI & TRẠNG THÁI THIẾT BỊ (DELIVERY STATE MACHINE)")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(AdminTheme.textSecondary)
+                    Text("Theo dõi trạng thái thời gian thực: QUEUED -> DELIVERED -> OPENED -> FAILED.")
+                        .font(.system(size: 12))
+                        .foregroundColor(AdminTheme.textMuted)
+                }
+                Spacer()
+                Text("Tổng \(deliveryManager.deliveryLogs.count) bản ghi")
+                    .font(.system(size: 11))
+                    .foregroundColor(AdminTheme.textMuted)
+            }
+            
+            VStack(spacing: 0) {
+                HStack {
+                    Text("THỜI GIAN").frame(width: 110, alignment: .leading)
+                    Text("TIÊU ĐỀ THÔNG BÁO").frame(maxWidth: .infinity, alignment: .leading)
+                    Text("NGƯỜI NHẬN").frame(width: 120, alignment: .leading)
+                    Text("DANH MỤC").frame(width: 90, alignment: .leading)
+                    Text("TRẠNG THÁI").frame(width: 110, alignment: .center)
+                }
+                .font(.system(size: 10, weight: .bold))
+                .foregroundColor(AdminTheme.textMuted)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(AdminTheme.surfaceHover)
+                
+                Divider().background(AdminTheme.border)
+                
+                if deliveryManager.deliveryLogs.isEmpty {
+                    Text("Chưa có nhật ký phát tin nào.")
+                        .font(.system(size: 12))
+                        .foregroundColor(AdminTheme.textMuted)
+                        .padding(24)
+                } else {
+                    ForEach(deliveryManager.deliveryLogs) { log in
+                        HStack {
+                            Text(formatDate(log.sentAt))
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundColor(AdminTheme.textMuted)
+                                .frame(width: 110, alignment: .leading)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(log.title)
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(AdminTheme.textPrimary)
+                                    .lineLimit(1)
+                                if let reason = log.failureReason {
+                                    Text("⚠️ \(reason)").font(.system(size: 10)).foregroundColor(.red)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            
+                            Text(log.userId.prefix(10) + "...")
+                                .font(.system(size: 11))
+                                .foregroundColor(AdminTheme.textSecondary)
+                                .frame(width: 120, alignment: .leading)
+                            
+                            Text(categoryLabel(for: log.category))
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(categoryColor(for: log.category))
+                                .frame(width: 90, alignment: .leading)
+                            
+                            HStack(spacing: 4) {
+                                Image(systemName: log.status.icon)
+                                Text(log.status.label)
+                            }
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(deliveryStatusColor(log.status))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(deliveryStatusColor(log.status).opacity(0.12))
+                            .cornerRadius(4)
+                            .frame(width: 110, alignment: .center)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        
+                        Divider().background(AdminTheme.border)
+                    }
+                }
+            }
+            .background(AdminTheme.surface)
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(AdminTheme.border, lineWidth: 1))
+            .cornerRadius(10)
+            
+            // Subscriber Token Overview
+            devicesAndTokensSection
+        }
+    }
+    
+    private func deliveryStatusColor(_ status: DeliveryStatus) -> Color {
+        switch status {
+        case .queued: return Color(hex: "64748B")
+        case .sending: return Color(hex: "6366F1")
+        case .delivered: return Color(hex: "10B981")
+        case .opened: return Color(hex: "F59E0B")
+        case .ignored: return Color(hex: "94A3B8")
+        case .failed, .invalidToken: return Color(hex: "EF4444")
         }
     }
     

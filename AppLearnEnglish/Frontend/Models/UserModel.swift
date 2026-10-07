@@ -12,16 +12,34 @@ struct UserModel: Codable, Identifiable, Equatable {
     let uid: String
     var name: String
     let email: String
-    var role: String       // "user" or "admin"
+    var role: String       // "user" hoặc "admin"
     var streak: Int
-    var level: String      // e.g. "Beginner"
+    var level: String      // ví dụ: "Beginner"
     var xp: Int
-    var dailyXP: Int?      // daily XP earned
-    var dailyGoal: Int     // e.g. 20 (XP target per day)
+    var dailyXP: Int?      // XP kiếm được trong ngày
+    var dailyGoal: Int     // Mục tiêu XP/ngày (mặc định 20)
     var createdAt: Date
-    var avatar: String?    // selected avatar emoji
-    var fcmToken: String?  // Firebase Cloud Messaging device push token
-    var isActive: Bool?    // whether the account is active or suspended (nil defaults to true)
+    var avatar: String?    // URL avatar hoặc tên ảnh
+    var fcmToken: String?  // Push notification token
+    var isActive: Bool?    // Trạng thái tài khoản hoạt động / bị khóa
+    
+    // MARK: - ✨ Premium / VIP Subscription Fields (Mới thêm)
+    var isPremium: Bool?           // true: tài khoản VIP, false/nil: tài khoản Free
+    var premiumPlan: String?       // "monthly", "yearly", "lifetime", "admin_granted", "demo_vip"
+    var premiumExpiresAt: Date?    // Thời điểm hết hạn gói
+    
+    // MARK: - ✨ Helper: Kiểm tra quyền VIP còn hiệu lực không
+    var isProMember: Bool {
+        guard isPremium == true else { return false }
+        
+        // Nếu có ngày hết hạn thì kiểm tra xem thời gian hiện tại đã vượt quá chưa
+        if let expiresAt = premiumExpiresAt {
+            return expiresAt > Date()
+        }
+        
+        // Không có ngày hết hạn tức là gói Mua Trọn Đời (Lifetime)
+        return true
+    }
     
     var isAccountActive: Bool {
         isActive ?? true
@@ -40,7 +58,10 @@ struct UserModel: Codable, Identifiable, Equatable {
         createdAt: Date = Date(),
         avatar: String? = nil,
         fcmToken: String? = nil,
-        isActive: Bool? = true
+        isActive: Bool? = true,
+        isPremium: Bool? = false,
+        premiumPlan: String? = nil,
+        premiumExpiresAt: Date? = nil
     ) {
         self.uid = uid
         self.name = name
@@ -55,9 +76,12 @@ struct UserModel: Codable, Identifiable, Equatable {
         self.avatar = avatar
         self.fcmToken = fcmToken
         self.isActive = isActive
+        self.isPremium = isPremium
+        self.premiumPlan = premiumPlan
+        self.premiumExpiresAt = premiumExpiresAt
     }
     
-    // Custom coding keys if needed for compatibility
+    // CodingKeys giúp Firestore Decode / Encode chính xác
     enum CodingKeys: String, CodingKey {
         case uid
         case name
@@ -72,5 +96,8 @@ struct UserModel: Codable, Identifiable, Equatable {
         case avatar
         case fcmToken
         case isActive
+        case isPremium
+        case premiumPlan
+        case premiumExpiresAt
     }
 }

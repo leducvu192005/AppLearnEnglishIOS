@@ -41,6 +41,12 @@ class ExampleResponse(BaseModel):
     sentence: str
 
 from schemas.grammar import CorrectionRequest, CorrectionResponse
+from schemas.pronunciation import PronunciationRequest, PronunciationResponse
+from services.pronunciation_service import PronunciationService
+from services.vector_db_service import VectorDBService
+
+pronunciation_service = PronunciationService()
+vector_db_service = VectorDBService()
 
 class ChatMessage(BaseModel):
     role: str  # "user" or "model" / "assistant"
@@ -154,10 +160,29 @@ async def correct_grammar(request: CorrectionRequest):
         raise HTTPException(status_code=500, detail="Grammar model unavailable")
 
 
+@router.post("/pronunciation-score", response_model=PronunciationResponse)
+async def score_pronunciation(request: PronunciationRequest):
+    ref = request.reference_text.strip()
+    spk = request.spoken_text.strip()
+    if not ref:
+        raise HTTPException(status_code=400, detail="Reference text cannot be empty.")
+    try:
+        result = pronunciation_service.evaluate_pronunciation(ref, spk)
+        return PronunciationResponse(**result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Pronunciation scoring failed: {e}")
+
+
 @router.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     if gemini_available:
         try:
+            last_message = request.messages[-1].content if request.messages else ""
+            
+            # Retrieve pedagogical context via VectorDB RAG
+            rag_docs = vector_db_service.retrieve(last_message, top_k=2)
+            rag_context = vector_db_service.format_context_for_prompt(rag_docs) if rag_docs else ""
+
             # Map conversation messages to Gemini Chat format
             chat_history = []
             for msg in request.messages[:-1]:
@@ -167,12 +192,15 @@ async def chat(request: ChatRequest):
             
             # Start Gemini Chat session
             system_instruction = (
-                "You are an friendly English learning assistant named Owl Tutor. "
-                "You help the user practice conversational English. Speak in simple English. "
-                "Keep your answers short (2-3 sentences max). If they make a grammatical error, "
-                "politely correct it at the beginning of your message, then continue the conversation."
+                "You are a friendly, encouraging English learning assistant named Owl Tutor. "
+                "You help the user practice conversational English. Speak in simple, natural English. "
+                "Keep your answers concise (2-3 sentences max). If they make a grammatical error, "
+                "politely point it out and provide the correction, then continue the conversation."
             )
             
+            if rag_context:
+                system_instruction += f"\n{rag_context}"
+
             if request.vocabulary:
                 vocab_list = ", ".join(request.vocabulary)
                 system_instruction += (
@@ -186,7 +214,6 @@ async def chat(request: ChatRequest):
                 system_instruction=system_instruction
             ).start_chat(history=chat_history)
             
-            last_message = request.messages[-1].content
             response = chat_session.send_message(last_message)
             return ChatResponse(reply=response.text.strip())
             
@@ -194,12 +221,13 @@ async def chat(request: ChatRequest):
             print(f"Gemini chat failed: {e}. Falling back to mock response.")
             
     # Mock Data Fallback
-    user_msg = request.messages[-1].content.lower()
+    user_msg = request.messages[-1].content.lower() if request.messages else ""
     if "hello" in user_msg or "hi" in user_msg:
         reply = "Hello! I am Owl Tutor. How are you feeling today? Let's practice English!"
     elif "how are you" in user_msg:
         reply = "I'm doing great, thank you! What did you do today?"
     else:
-        reply = f"I received your message: '{request.messages[-1].content}'. Set your GEMINI_API_KEY to start real conversations!"
+        reply = f"I received your message: '{request.messages[-1].content if request.messages else ''}'. Set your GEMINI_API_KEY to start real conversations!"
         
     return ChatResponse(reply=reply)
+

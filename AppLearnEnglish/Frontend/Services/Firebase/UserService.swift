@@ -94,6 +94,9 @@ class UserService {
                 if calendar.isDateInYesterday(lastDate) {
                     newStreak = currentStreak + 1
                 } else {
+                    if currentStreak > 0 {
+                        EventEngine.shared.track(.streakBroken, properties: ["previous_streak": currentStreak])
+                    }
                     newStreak = 1
                 }
             }

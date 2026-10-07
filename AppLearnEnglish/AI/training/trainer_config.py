@@ -18,8 +18,8 @@ class TrainerConfigParams:
     OUTPUT_DIR: str = str(Path(__file__).resolve().parent.parent / "checkpoints")
     
     # Hyperparameters
-    NUM_EPOCHS: int = 3
-    LEARNING_RATE: float = 3e-4
+    NUM_EPOCHS: int = 8
+    LEARNING_RATE: float = 5e-4
     BATCH_SIZE: int = 4
     GRADIENT_ACCUMULATION_STEPS: int = 2
     

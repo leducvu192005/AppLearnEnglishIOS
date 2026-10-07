@@ -26,7 +26,7 @@ final class VocabularyRepository: VocabularyRepositoryProtocol {
         try await firestoreService.fetchTopics()
     }
     
-    func fetchWords(for topicId: String) async throws -> [VocabularyWord] {
+    func fetchWords(for topicId: String = "") async throws -> [VocabularyWord] {
         try await firestoreService.fetchWords(for: topicId)
     }
     

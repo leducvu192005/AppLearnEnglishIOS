@@ -33,6 +33,10 @@ struct CuteCardModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background(AppTheme.cardBackground)
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(DesignSystem.Colors.cardBorder, lineWidth: 1)
+            )
             .cornerRadius(cornerRadius)
             .shadow(color: shadowColor, radius: 12, x: 0, y: 4)
     }

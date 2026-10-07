@@ -90,6 +90,9 @@ class AuthService: ObservableObject {
             
             try await db.collection("users").document(user.uid).setData(userData)
             
+            // Emit userRegistered event to trigger Onboarding Drip Journey
+            EventEngine.shared.track(.userRegistered, userId: user.uid, userName: name)
+            
             await MainActor.run {
                 self.isLoading = false
             }

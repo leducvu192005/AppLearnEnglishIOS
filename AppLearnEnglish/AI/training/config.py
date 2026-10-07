@@ -6,6 +6,8 @@ Configuration variables, hyperparameters, model paths, and settings
 for fine-tuning FLAN-T5 GEC model using LoRA.
 """
 
+from pathlib import Path
+
 class TrainingConfig:
     # Model parameters
     MODEL_NAME = "google/flan-t5-base"
@@ -28,8 +30,10 @@ class TrainingConfig:
     WARMUP_RATIO = 0.03
     
     # Paths
-    TRAIN_DATA_PATH = "datasets/processed/train.jsonl"
-    VAL_DATA_PATH = "datasets/processed/validation.jsonl"
-    TEST_DATA_PATH = "datasets/processed/test.jsonl"
-    CHECKPOINT_DIR = "checkpoints"
-    EXPORT_DIR = "exports"
+    AI_ROOT = Path(__file__).resolve().parent.parent
+    TRAIN_DATA_PATH = str(AI_ROOT / "datasets" / "processed" / "train.jsonl")
+    VAL_DATA_PATH = str(AI_ROOT / "datasets" / "processed" / "validation.jsonl")
+    TEST_DATA_PATH = str(AI_ROOT / "datasets" / "processed" / "test.jsonl")
+    CHECKPOINT_DIR = str(AI_ROOT / "checkpoints")
+    EXPORT_DIR = str(AI_ROOT / "exports")
+

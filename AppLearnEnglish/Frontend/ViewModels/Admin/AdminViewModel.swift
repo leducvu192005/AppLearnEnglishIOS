@@ -47,6 +47,7 @@ class AdminViewModel: ObservableObject {
     @Published var quizzes: [Quiz] = []
     @Published var listeningTopics: [Topic] = []
     @Published var listeningExercises: [ListeningExercise] = []
+    @Published var readingLessons: [ReadingLesson] = []
     @Published var notifications: [AdminNotification] = []
     
     @Published var isLoading = false
@@ -70,6 +71,7 @@ class AdminViewModel: ObservableObject {
     @Published var userSearchText = ""
     @Published var selectedUserRoleFilter = "All" // "All", "user", "admin"
     @Published var selectedUserStatusFilter = "All" // "All", "Active", "Suspended"
+    @Published var selectedUserSubscriptionFilter = "All" // "All", "Free", "Pro"
     @Published var selectedUserSort = "Name A-Z" // "Name A-Z", "Name Z-A", "Most XP", "Least XP", "Newest"
     
     // Import wizard states
@@ -269,6 +271,14 @@ class AdminViewModel: ObservableObject {
             }
         }
         
+        if selectedUserSubscriptionFilter != "All" {
+            if selectedUserSubscriptionFilter == "Pro" {
+                result = result.filter { $0.isProMember }
+            } else if selectedUserSubscriptionFilter == "Free" {
+                result = result.filter { !$0.isProMember }
+            }
+        }
+        
         result.sort { (u1, u2) -> Bool in
             switch selectedUserSort {
             case "Name Z–A", "Name Z-A":
@@ -354,7 +364,41 @@ class AdminViewModel: ObservableObject {
             print("Admin: Failed to load notifications: \(error.localizedDescription)")
         }
         
+        // 8. Load Reading Lessons (from /reading_lessons)
+        do {
+            self.readingLessons = try await ReadingService.shared.fetchReadingLessons()
+        } catch {
+            print("Admin: Failed to load reading lessons: \(error.localizedDescription)")
+        }
+        
         self.isLoading = false
+    }
+    
+    // MARK: - Reading Lesson Operations
+    func loadReadingLessons() async {
+        do {
+            self.readingLessons = try await ReadingService.shared.fetchReadingLessons()
+        } catch {
+            self.errorMessage = "Không thể tải danh sách bài đọc: \(error.localizedDescription)"
+        }
+    }
+    
+    func saveReadingLesson(_ lesson: ReadingLesson) async {
+        do {
+            try await ReadingService.shared.saveReadingLesson(lesson)
+            await loadReadingLessons()
+        } catch {
+            self.errorMessage = "Lỗi khi lưu bài đọc: \(error.localizedDescription)"
+        }
+    }
+    
+    func deleteReadingLesson(id: String) async {
+        do {
+            try await ReadingService.shared.deleteReadingLesson(id: id)
+            self.readingLessons.removeAll(where: { $0.safeId == id })
+        } catch {
+            self.errorMessage = "Lỗi khi xóa bài đọc: \(error.localizedDescription)"
+        }
     }
     
     // MARK: - User Operations
@@ -427,6 +471,21 @@ class AdminViewModel: ObservableObject {
             }
         } catch {
             self.errorMessage = error.localizedDescription
+        }
+    }
+    
+    func updateUserSubscription(uid: String, isPremium: Bool, plan: String?, expiresAt: Date?) async {
+        do {
+            try await repository.updateUserSubscription(uid: uid, isPremium: isPremium, plan: plan, expiresAt: expiresAt)
+            if let idx = users.firstIndex(where: { $0.uid == uid }) {
+                var updated = users[idx]
+                updated.isPremium = isPremium
+                updated.premiumPlan = plan
+                updated.premiumExpiresAt = expiresAt
+                users[idx] = updated
+            }
+        } catch {
+            self.errorMessage = "Lỗi cập nhật gói VIP: \(error.localizedDescription)"
         }
     }
     

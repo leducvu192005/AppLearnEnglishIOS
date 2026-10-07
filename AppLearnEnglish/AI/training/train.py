@@ -122,7 +122,7 @@ def main() -> None:
         gradient_accumulation_steps=TrainerConfigParams.GRADIENT_ACCUMULATION_STEPS,
         learning_rate=TrainerConfigParams.LEARNING_RATE,
         num_train_epochs=TrainerConfigParams.NUM_EPOCHS,
-        evaluation_strategy="epoch",
+        eval_strategy="epoch",
         save_strategy="epoch",
         logging_steps=10,
         save_total_limit=2,
@@ -164,6 +164,7 @@ def main() -> None:
     final_output_path = output_dir / "checkpoint-final"
     logger.info(f"Saving final adapter model to: {final_output_path}")
     trainer.save_model(str(final_output_path))
+    tokenizer.save_pretrained(str(final_output_path))
     
     # Save training parameters for provenance
     config_dict = {
