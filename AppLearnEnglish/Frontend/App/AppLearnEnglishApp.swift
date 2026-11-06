@@ -6,6 +6,7 @@
 import SwiftUI
 import FirebaseCore
 import FirebaseMessaging
+import GoogleSignIn
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
@@ -45,6 +46,9 @@ struct AppLearnEnglishApp: App {
             RootView()
                 .environmentObject(SessionManager.shared)
                 .environmentObject(AuthService.shared)
+                .onOpenURL { url in
+                    GIDSignIn.sharedInstance.handle(url)
+                }
         }
     }
 }

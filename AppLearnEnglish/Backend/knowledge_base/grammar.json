@@ -1,0 +1,177 @@
+[
+  {
+    "id": "gram_tenses_present_perfect_vs_past_simple",
+    "topic": "Phân biệt Thì Quá khứ đơn (Past Simple) và Hiện tại hoàn thành (Present Perfect)",
+    "category": "grammar",
+    "keywords": ["quá khứ đơn", "hiện tại hoàn thành", "past simple", "present perfect", "since", "for", "yesterday", "ago", "already", "yet"],
+    "rule": "1. Quá khứ đơn (Past Simple): Diễn tả hành động ĐÃ CHẤM DỨT hoàn toàn trong quá khứ, có thời gian xác định rõ ràng (yesterday, last night, in 2020, 2 days ago).\n2. Hiện tại hoàn thành (Present Perfect): Diễn tả hành động xảy ra trong quá khứ nhưng KẾT QUẢ hoặc TÁC ĐỘNG vẫn còn liên quan đến hiện tại, hoặc trải nghiệm tính đến thời điểm nói (since, for, ever, never, already, yet, just, recently).",
+    "formula": "Past Simple: S + V2/ed (+ didn't + V_inf)\nPresent Perfect: S + have/has + V3/ed (+ haven't/hasn't + V3/ed)",
+    "examples": [
+      {
+        "en": "I lost my key yesterday.",
+        "vi": "Tôi đã làm mất chìa khóa hôm qua. (Chỉ kể sự việc đã xảy ra hôm qua, có thể bây giờ đã tìm thấy rồi)."
+      },
+      {
+        "en": "I have lost my key. I can't get into my room now.",
+        "vi": "Tôi vừa làm mất chìa khóa rồi. (Hậu quả là bây giờ tôi không vào phòng được)."
+      },
+      {
+        "en": "She lived in Hanoi for 5 years.",
+        "vi": "Cô ấy đã sống ở Hà Nội 5 năm. (Bây giờ cô ấy không còn sống ở Hà Nội nữa)."
+      },
+      {
+        "en": "She has lived in Hanoi for 5 years.",
+        "vi": "Cô ấy đã sống ở Hà Nội được 5 năm. (Bây giờ cô ấy vẫn đang tiếp tục sống ở Hà Nội)."
+      }
+    ],
+    "common_mistakes": "Dùng thì Quá khứ đơn với 'since/for' khi hành động vẫn đang tiếp diễn (Sai: I live here since 2020 -> Đúng: I have lived here since 2020), hoặc dùng Hiện tại hoàn thành khi có mốc thời gian quá khứ cụ thể (Sai: I have seen him yesterday -> Đúng: I saw him yesterday).",
+    "quick_quiz": {
+      "question": "Chọn câu đúng: 'Tom ________ in London since he was ten.'",
+      "options": ["lives", "has lived", "lived", "is living"],
+      "correct_answer": "has lived",
+      "explanation": "Có 'since + mốc thời gian quá khứ' nên phải dùng thì Hiện tại hoàn thành."
+    }
+  },
+  {
+    "id": "gram_prepositions_in_on_at_time_place",
+    "topic": "Cách dùng giới từ IN, ON, AT (Thời gian & Địa điểm)",
+    "category": "grammar",
+    "keywords": ["giới từ", "in on at", "prepositions", "in", "on", "at", "thời gian", "nơi chốn"],
+    "rule": "Quy tắc hình phễu (từ rộng nhất đến hẹp nhất):\n1. IN (Tổng quát nhất):\n   - Thời gian: Thế kỷ, thập kỷ, năm, mùa, tháng, các buổi trong ngày (in the 21st century, in 2024, in summer, in July, in the morning).\n   - Nơi chốn: Quốc gia, thành phố, không gian khép kín (in Vietnam, in Tokyo, in the room, in a car).\n2. ON (Cụ thể vừa phải):\n   - Thời gian: Ngày trong tuần, ngày tháng cụ thể, ngày lễ có từ 'day' (on Monday, on May 5th, on Christmas Day).\n   - Nơi chốn: Bề mặt, đường phố, phương tiện giao thông công cộng lớn (on the table, on the wall, on Oxford Street, on the bus/train/plane).\n3. AT (Cụ thể, chính xác nhất):\n   - Thời gian: Giờ giấc chính xác, thời điểm đặc biệt (at 7:00 AM, at noon, at midnight, at bedtime, at Christmas).\n   - Nơi chốn: Địa chỉ nhà cụ thể, địa điểm xác định với chức năng cụ thể (at 123 Main Street, at home, at school, at the airport).",
+    "formula": "IN (Năm/Tháng/Nước) > ON (Ngày/Đường/Bề mặt) > AT (Giờ/Số nhà/Địa điểm cụ thể)",
+    "examples": [
+      {
+        "en": "We are meeting at 8:30 AM on Monday in the conference room.",
+        "vi": "Chúng ta sẽ gặp nhau lúc 8:30 sáng vào thứ Hai trong phòng họp."
+      },
+      {
+        "en": "He lives at 45 Nguyen Hue Street in Ho Chi Minh City.",
+        "vi": "Anh ấy sống tại số 45 đường Nguyễn Huệ, ở Thành phố Hồ Chí Minh."
+      }
+    ],
+    "common_mistakes": "Nói 'in Sunday' (Sai) -> 'on Sunday' (Đúng); 'at the morning' (Sai) -> 'in the morning' (Đúng, nhưng 'at night' lại đúng).",
+    "quick_quiz": {
+      "question": "Điền giới từ thích hợp: 'The concert starts ______ 7:30 PM ______ Saturday.'",
+      "options": ["in / on", "at / on", "at / in", "on / at"],
+      "correct_answer": "at / on",
+      "explanation": "'7:30 PM' là giờ cụ thể dùng 'at', 'Saturday' là thứ dùng 'on'."
+    }
+  },
+  {
+    "id": "gram_articles_a_an_the",
+    "topic": "Cách dùng mạo từ A, AN, THE và Không dùng mạo từ (Zero Article)",
+    "category": "grammar",
+    "keywords": ["mạo từ", "a an the", "articles", "a", "an", "the", "danh từ đếm được", "danh từ không đếm được"],
+    "rule": "1. Mạo từ bất định (A / AN): Dùng cho danh từ đếm được số ít khi được nhắc đến lần đầu hoặc chưa xác định. Dùng 'AN' trước từ bắt đầu bằng NGUYÊN ÂM PHÁT ÂM (/u/, /e/, /o/, /a/, /i/ - ví dụ: an hour, an apple, an umbrella; nhưng: a university vì phát âm bắt đầu bằng /j/).\n2. Mạo từ xác định (THE): Dùng cho cả số ít, số nhiều, không đếm được khi đối tượng đã được xác định rõ (cả người nói và người nghe đều biết là ai/cái gì), vật thể duy nhất (the sun, the moon), so sánh nhất (the best), nhạc cụ (play the piano), sông/đại dương/dãy núi (the Amazon, the Alps).\n3. Không dùng mạo từ (Zero Article): Trước danh từ số nhiều hoặc không đếm được khi nói chung chung (Cats love milk, Life is beautiful), tên đất nước số ít (Vietnam, Japan), bữa ăn (have breakfast), môn thể thao/học tập (play football, learn English).",
+    "formula": "A/An + N đếm được số ít (chưa xác định) | THE + N (đã xác định/duy nhất)",
+    "examples": [
+      {
+        "en": "I bought a book yesterday. The book is very interesting.",
+        "vi": "Hôm qua tôi mua một quyển sách (lần đầu nhắc tới dùng 'a'). Quyển sách đó rất thú vị (nhắc lại lần hai cả hai đều biết nên dùng 'the')."
+      },
+      {
+        "en": "She wants to become an honest engineer.",
+        "vi": "Cô ấy muốn trở thành một kỹ sư trung thực ('honest' phát âm là /ˈɒnɪst/ bắt đầu bằng nguyên âm nên dùng 'an')."
+      }
+    ],
+    "common_mistakes": "Căn cứ theo chữ cái viết thay vì cách phát âm (Sai: a hour -> Đúng: an hour vì 'h' câm; Sai: an university -> Đúng: a university vì phát âm là /juːnɪ.../).",
+    "quick_quiz": {
+      "question": "Chọn mạo từ đúng: 'Look at ______ moon! It's so bright tonight.'",
+      "options": ["a", "an", "the", "không cần mạo từ"],
+      "correct_answer": "the",
+      "explanation": "Mặt trăng 'moon' là vật thể duy nhất trong vũ trụ nên phải dùng 'the'."
+    }
+  },
+  {
+    "id": "gram_conditionals_0_1_2_3",
+    "topic": "Các loại Câu điều kiện (Conditionals Types 0, 1, 2, 3)",
+    "category": "grammar",
+    "keywords": ["câu điều kiện", "if", "conditionals", "loại 1", "loại 2", "loại 3", "type 1", "type 2", "type 3"],
+    "rule": "1. Loại 0 (Sự thật hiển nhiên/Khoa học): If + Present Simple, Present Simple.\n2. Loại 1 (Có thể xảy ra ở hiện tại hoặc tương lai): If + Present Simple, S + will/can + V_inf.\n3. Loại 2 (Không có thật ở hiện tại, giả định trái ngược hiện tại): If + Past Simple (to be dùng 'were' cho mọi ngôi), S + would/could + V_inf.\n4. Loại 3 (Không có thật trong quá khứ, nuối tiếc quá khứ): If + Past Perfect (had + V3), S + would/could + have + V3.",
+    "formula": "Type 1: If S + V(s/es), S + will + V_inf\nType 2: If S + V2/were, S + would + V_inf\nType 3: If S + had + V3, S + would have + V3",
+    "examples": [
+      {
+        "en": "If it rains tomorrow, we will stay at home. (Type 1)",
+        "vi": "Nếu ngày mai trời mưa, chúng tôi sẽ ở nhà (có thể xảy ra)."
+      },
+      {
+        "en": "If I had a million dollars, I would travel around the world. (Type 2)",
+        "vi": "Nếu tôi có một triệu đô la bây giờ, tôi sẽ đi du lịch khắp thế giới (thực tế hiện tại không có)."
+      },
+      {
+        "en": "If I had studied harder, I would have passed the exam last week. (Type 3)",
+        "vi": "Nếu tuần trước tôi học chăm hơn thì tôi đã đậu kỳ thi rồi (thực tế tuần trước đã không học chăm và đã trượt)."
+      }
+    ],
+    "common_mistakes": "Dùng 'will' ngay trong mệnh đề IF (Sai: If it will rain -> Đúng: If it rains); Dùng 'was' thay cho 'were' trong văn cảnh trang trọng ở loại 2 (Nên dùng: If I were you).",
+    "quick_quiz": {
+      "question": "Hoàn thành câu: 'If I ______ his phone number, I would call him right now.'",
+      "options": ["know", "knew", "had known", "will know"],
+      "correct_answer": "knew",
+      "explanation": "Vế kết quả có 'would call' (Loại 2) nên vế IF phải chia ở Quá khứ đơn 'knew'."
+    }
+  },
+  {
+    "id": "gram_passive_voice",
+    "topic": "Câu bị động (Passive Voice) và Nguyên tắc biến đổi",
+    "category": "grammar",
+    "keywords": ["bị động", "passive voice", "passive", "by", "câu bị động"],
+    "rule": "Câu bị động được dùng khi ta muốn nhấn mạnh vào HÀNH ĐỘNG hoặc ĐỐI TƯỢNG CHỊU TÁC ĐỘNG hơn là người thực hiện hành động, hoặc khi không biết rõ người thực hiện.\nQuy tắc chuyển đổi:\n- Tân ngữ (O) của câu chủ động trở thành Chủ ngữ (S) của câu bị động.\n- Động từ chia theo công thức: BE + V3/ed (BE chia theo đúng thì của câu chủ động).\n- Chủ ngữ của câu chủ động chuyển thành 'by + O' (nếu không quan trọng như someone, people thì có thể lược bỏ).",
+    "formula": "Chủ động: S + V + O  -->  Bị động: S (từ O) + BE (theo thì) + V3/ed (+ by O)",
+    "examples": [
+      {
+        "en": "Active: Shakespeare wrote Hamlet in 1600. -> Passive: Hamlet was written by Shakespeare in 1600.",
+        "vi": "Chủ động: Shakespeare đã viết Hamlet năm 1600. -> Bị động: Vở kịch Hamlet được viết bởi Shakespeare năm 1600."
+      },
+      {
+        "en": "Active: They are repairing the bridge. -> Passive: The bridge is being repaired.",
+        "vi": "Họ đang sửa cây cầu. -> Cây cầu đang được sửa chữa."
+      }
+    ],
+    "common_mistakes": "Quên biến đổi động từ 'to be' theo thì (Sai: The room cleaned yesterday -> Đúng: The room was cleaned yesterday).",
+    "quick_quiz": {
+      "question": "Chuyển sang bị động: 'Someone has stolen my bicycle.'",
+      "options": [
+        "My bicycle was stolen.",
+        "My bicycle has stolen.",
+        "My bicycle has been stolen.",
+        "My bicycle is being stolen."
+      ],
+      "correct_answer": "My bicycle has been stolen.",
+      "explanation": "Câu gốc dùng Hiện tại hoàn thành (has stolen) nên bị động là 'has been stolen'."
+    }
+  },
+  {
+    "id": "gram_gerund_vs_infinitive",
+    "topic": "Phân biệt V-ing (Gerund) và To V (Infinitive)",
+    "category": "grammar",
+    "keywords": ["v-ing", "to v", "gerund", "infinitive", "danh động từ", "động từ nguyên mẫu", "enjoy", "want", "remember", "stop"],
+    "rule": "1. Các động từ chỉ đi với V-ing: enjoy, avoid, mind, consider, admit, suggest, practice, spend (time) + V-ing, can't help, look forward to + V-ing.\n2. Các động từ chỉ đi với To V: want, decide, hope, plan, promise, agree, refuse, offer, tend, afford.\n3. Các động từ đi với cả hai nhưng ĐỔI NGHĨA:\n   - Remember/Forget/Regret + To V: Nhớ/Quên/Tiếc phải làm việc gì trong tương lai hoặc bổn phận.\n   - Remember/Forget/Regret + V-ing: Nhớ/Quên/Hối tiếc về một việc đã làm trong quá khứ.\n   - Stop + To V: Dừng lại để làm một việc khác.\n   - Stop + V-ing: Dừng hẳn hành động đang làm.",
+    "formula": "V + V-ing (Hành động đang/đã diễn ra, sở thích) vs V + To V (Mục đích, dự định tương lai)",
+    "examples": [
+      {
+        "en": "I stopped smoking. (Tôi đã bỏ hút thuốc hẳn).",
+        "vi": "Dừng hẳn thói quen hút thuốc."
+      },
+      {
+        "en": "I was driving and I stopped to smoke. (Tôi đang lái xe và dừng xe lại để hút thuốc).",
+        "vi": "Tạm dừng việc lái xe để thực hiện hành động hút thuốc."
+      },
+      {
+        "en": "Remember to turn off the lights before leaving.",
+        "vi": "Hãy nhớ tắt đèn trước khi rời đi (nhiệm vụ cần làm)."
+      },
+      {
+        "en": "I remember meeting him in Paris two years ago.",
+        "vi": "Tôi nhớ là đã từng gặp anh ấy ở Paris 2 năm trước (kỷ niệm trong quá khứ)."
+      }
+    ],
+    "common_mistakes": "Dùng 'To V' sau 'look forward to' (Sai: I look forward to meet you -> Đúng: I look forward to meeting you vì 'to' ở đây là giới từ).",
+    "quick_quiz": {
+      "question": "Điền dạng đúng của động từ: 'She suggested ________ a taxi because of the heavy rain.'",
+      "options": ["to take", "taking", "take", "took"],
+      "correct_answer": "taking",
+      "explanation": "Động từ 'suggest' luôn đi kèm với danh động từ V-ing (suggest doing something)."
+    }
+  }
+]

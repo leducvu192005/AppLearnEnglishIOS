@@ -1,0 +1,54 @@
+[
+  {
+    "id": "faq_how_to_remember_vocabulary",
+    "topic": "Phương pháp học và ghi nhớ từ vựng tiếng Anh lâu dài",
+    "category": "tips",
+    "keywords": ["nhớ từ vựng", "học từ vựng", "vocabulary tips", "quên từ vựng", "spaced repetition"],
+    "rule": "Để không bị 'học trước quên sau', hãy áp dụng 3 nguyên tắc khoa học:\n1. Học theo Cụm từ và Ngữ cảnh (Collocation/Context): Không học từng từ đơn lẻ. Thay vì học 'decision', hãy học 'make a decision' (đưa ra quyết định).\n2. Kỹ thuật Lặp lại ngắt quãng (Spaced Repetition): Ôn lại từ sau 1 ngày -> 3 ngày -> 7 ngày -> 14 ngày -> 30 ngày.\n3. Vận dụng ngay (Active Recall): Đặt 2 câu nói về cuộc sống thật của chính bạn có chứa từ mới đó hoặc dùng tính năng AI Chat trong ứng dụng để trò chuyện.",
+    "formula": "Ngữ cảnh thực tế + Spaced Repetition + Active Output = Ghi nhớ vĩnh viễn",
+    "examples": [
+      {
+        "en": "Instead of memorizing 'achieve' alone, remember: 'achieve great success in life'.",
+        "vi": "Thay vì học từ 'achieve' trơ trọi, hãy học cả cụm: 'đạt được thành công lớn trong cuộc sống'."
+      }
+    ],
+    "common_mistakes": "Ghi chép danh sách dài dằng dặc 50 từ/ngày nhưng chỉ học nghĩa tiếng Việt mà không bao giờ đặt câu hay nghe phát âm.",
+    "quick_quiz": {
+      "question": "Phương pháp nào giúp nhớ từ vựng hiệu quả nhất?",
+      "options": [
+        "Chép đi chép lại 100 lần",
+        "Học theo cụm từ trong ngữ cảnh và lặp lại ngắt quãng",
+        "Chỉ đọc danh sách nghĩa tiếng Việt",
+        "Học 100 từ mỗi ngày nhưng không ôn lại"
+      ],
+      "correct_answer": "Học theo cụm từ trong ngữ cảnh và lặp lại ngắt quãng",
+      "explanation": "Học từ vựng theo cụm và ôn tập ngắt quãng (Spaced Repetition) đã được khoa học chứng minh là phương pháp bền vững nhất."
+    }
+  },
+  {
+    "id": "faq_overcome_fear_of_speaking",
+    "topic": "Cách vượt qua nỗi sợ nói tiếng Anh và tự tin phản xạ",
+    "category": "tips",
+    "keywords": ["sợ nói", "tự tin", "luyện nói", "speaking tips", "ngại giao tiếp", "phản xạ"],
+    "rule": "1. Chấp nhận mắc lỗi: Người bản xứ quan tâm đến ý bạn muốn truyền đạt chứ không soi từng lỗi ngữ pháp nhỏ. Mắc lỗi là cách duy nhất để tiến bộ.\n2. Kỹ thuật Nói nhại (Shadowing): Nghe audio người bản xứ và lặp lại y hệt về ngữ điệu, nhấn nhá.\n3. Luyện tập với AI: Sử dụng Owl Tutor trong app để luyện nói và nhắn tin 1-1 không sợ bị phán xét.",
+    "formula": "Shadowing + Trò chuyện hàng ngày cùng AI Tutor = Phản xạ tự nhiên",
+    "examples": [
+      {
+        "en": "Speak simply and clearly first; speed and complex vocabulary will come naturally later.",
+        "vi": "Hãy nói đơn giản và rõ ràng trước; tốc độ và từ vựng nâng cao sẽ tự khắc đến sau."
+      }
+    ],
+    "common_mistakes": "Dịch từng từ tiếng Việt sang tiếng Anh trong đầu trước khi nói, dẫn đến ngập ngừng và chậm phản xạ.",
+    "quick_quiz": {
+      "question": "Để tăng phản xạ nói tiếng Anh, bạn nên làm gì?",
+      "options": [
+        "Dịch từng từ tiếng Việt sang tiếng Anh trong đầu",
+        "Chờ học hết toàn bộ ngữ pháp rồi mới dám nói",
+        "Luyện kỹ thuật Shadowing và nói thường xuyên cùng AI Tutor",
+        "Chỉ học ngữ pháp trên giấy"
+      ],
+      "correct_answer": "Luyện kỹ thuật Shadowing và nói thường xuyên cùng AI Tutor",
+      "explanation": "Luyện nhại giọng (Shadowing) và tương tác phản xạ thường xuyên là chìa khóa mở khóa khả năng nói lưu loát."
+    }
+  }
+]

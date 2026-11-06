@@ -24,6 +24,13 @@ class Settings(BaseSettings):
     
     # Google Gemini API Key fallback
     GEMINI_API_KEY: str = ""
+    
+    # PayOS Payment Gateway Configuration
+    PAYOS_CLIENT_ID: str = ""
+    PAYOS_API_KEY: str = ""
+    PAYOS_CHECKSUM_KEY: str = ""
+    FIREBASE_PROJECT_ID: str = "applearnenglishio"
+    FIREBASE_API_KEY: str = "AIzaSyACC4zDt9CD_R1EGCmBrLd4MiRDo0y0ptc"
 
     class Config:
         env_file = ".env"

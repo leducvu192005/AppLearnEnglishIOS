@@ -38,6 +38,10 @@ app.add_middleware(
 from api.ai_endpoints import router as ai_router
 app.include_router(ai_router)
 
+# Import and register the Payment & VietQR Webhook router
+from api.payment_endpoints import router as payment_router
+app.include_router(payment_router)
+
 @app.get("/")
 def read_root():
     return {

@@ -9,9 +9,11 @@
 /* Begin PBXBuildFile section */
 		00E402E028307570897B45A8 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 47EC7774661C75496B05BECF /* GoogleService-Info.plist */; };
 		24F14F083795F0395985EEC0 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 4515A2ACED6E1E4EA9AE4D4D /* FirebaseAuth */; };
+		50F88F58C2B5C11F7067CFBD /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = BEED4E4F81ED71E67275D19A /* GoogleSignInSwift */; };
 		998E1027FDF4103CC2D25918 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 939581A84250A3E7B3427CDF /* FirebaseFirestore */; };
 		9F4B93F13D049E398657DC31 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2CE2AF80AB58397B9C64FBCE /* FirebaseCore */; };
 		B2E5D0E3F9C8B716250DFBB2 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = A1F4C9D2E8B7A60514FCEAA1 /* FirebaseMessaging */; };
+		B8E699E84708ABDC9CB1E1C3 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 334CCE704BEC2434C15C48E3 /* GoogleSignIn */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -49,6 +51,8 @@
 				24F14F083795F0395985EEC0 /* FirebaseAuth in Frameworks */,
 				998E1027FDF4103CC2D25918 /* FirebaseFirestore in Frameworks */,
 				B2E5D0E3F9C8B716250DFBB2 /* FirebaseMessaging in Frameworks */,
+				B8E699E84708ABDC9CB1E1C3 /* GoogleSignIn in Frameworks */,
+				50F88F58C2B5C11F7067CFBD /* GoogleSignInSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -97,6 +101,8 @@
 				4515A2ACED6E1E4EA9AE4D4D /* FirebaseAuth */,
 				939581A84250A3E7B3427CDF /* FirebaseFirestore */,
 				A1F4C9D2E8B7A60514FCEAA1 /* FirebaseMessaging */,
+				334CCE704BEC2434C15C48E3 /* GoogleSignIn */,
+				BEED4E4F81ED71E67275D19A /* GoogleSignInSwift */,
 			);
 			productName = AppLearnEnglish;
 			productReference = 82D56463300D032000EDC427 /* AppLearnEnglish.app */;
@@ -128,6 +134,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				86E55DC1A3948A23AC4E99AD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				0EEB7D8C41D843817BA1B50F /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 82D56464300D032000EDC427 /* Products */;
@@ -285,13 +292,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = AppLearnEnglish/AppLearnEnglish.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3LD2BAMUC5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AppLearnEnglish/Info.plist;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Ứng dụng cần truy cập microphone để bạn luyện phát âm.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Bạn có muốn bật giọng nói để luyện tập không?";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -310,6 +317,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -324,13 +332,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = AppLearnEnglish/AppLearnEnglish.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3LD2BAMUC5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AppLearnEnglish/Info.plist;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Ứng dụng cần truy cập microphone để bạn luyện phát âm.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Bạn có muốn bật giọng nói để luyện tập không?";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -349,6 +357,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -382,6 +391,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		0EEB7D8C41D843817BA1B50F /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
 		86E55DC1A3948A23AC4E99AD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
@@ -398,6 +415,11 @@
 			package = 86E55DC1A3948A23AC4E99AD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseCore;
 		};
+		334CCE704BEC2434C15C48E3 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0EEB7D8C41D843817BA1B50F /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
 		4515A2ACED6E1E4EA9AE4D4D /* FirebaseAuth */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 86E55DC1A3948A23AC4E99AD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
@@ -412,6 +434,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 86E55DC1A3948A23AC4E99AD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseMessaging;
+		};
+		BEED4E4F81ED71E67275D19A /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0EEB7D8C41D843817BA1B50F /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
